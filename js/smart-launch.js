@@ -59,7 +59,7 @@ async function handleSmartLaunch(launch, issUrl) {
         }
         
         // 準備 OAuth 授權請求
-        const redirectUri = window.location.origin + '/FHIR-CQL-Quality-Platform/launch.html';
+        const redirectUri = 'https://tony19840205.github.io/FHIR-CQL-Quality-Platform/launch.html';
         const clientId = 'fhir-cql-platform'; // 可能需要根據實際情況調整
         const scope = 'launch openid fhirUser patient/*.read';
         
