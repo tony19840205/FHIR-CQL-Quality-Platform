@@ -60,43 +60,44 @@
     </div>
 
     <script>
-        console.log('🚀 SMART on FHIR Launch - Redirect Handler');
-        
-        // 取得 URL 參數
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const state = urlParams.get('state');
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-        
-        console.log('📋 收到的參數:', {
-            code: code ? '✓ 已接收' : '✗ 未提供',
-            state: state ? '✓ 已接收' : '✗ 未提供',
-            error: error || '無',
-            errorDescription: errorDescription || '無'
-        });
+        (async function() {
+            console.log('🚀 SMART on FHIR Launch - Redirect Handler');
+            
+            // 取得 URL 參數
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            const errorDescription = urlParams.get('error_description');
+            
+            console.log('📋 收到的參數:', {
+                code: code ? '✓ 已接收' : '✗ 未提供',
+                state: state ? '✓ 已接收' : '✗ 未提供',
+                error: error || '無',
+                errorDescription: errorDescription || '無'
+            });
 
-        // 檢查是否有錯誤
-        if (error) {
-            console.error('❌ OAuth 授權失敗:', error, errorDescription);
-            document.getElementById('status').textContent = 'OAuth 授權失敗';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('error').textContent = `錯誤: ${error}\n${errorDescription || ''}`;
-            return;
-        }
+            // 檢查是否有錯誤
+            if (error) {
+                console.error('❌ OAuth 授權失敗:', error, errorDescription);
+                document.getElementById('status').textContent = 'OAuth 授權失敗';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `錯誤: ${error}\n${errorDescription || ''}`;
+                return;
+            }
 
-        // 檢查是否有授權碼
-        if (!code) {
-            console.warn('⚠️ 未收到授權碼，可能是直接訪問或參數錯誤');
-            document.getElementById('status').textContent = '未收到授權碼，正在跳轉到首頁...';
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 2000);
-            return;
-        }
+            // 檢查是否有授權碼
+            if (!code) {
+                console.warn('⚠️ 未收到授權碼，可能是直接訪問或參數錯誤');
+                document.getElementById('status').textContent = '未收到授權碼，正在跳轉到首頁...';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
 
-        // 處理授權碼
-        async function handleOAuthCallback() {
+            // 處理授權碼
+            async function handleOAuthCallback() {
             try {
                 document.getElementById('status').textContent = '正在交換授權碼...';
                 
@@ -192,7 +193,8 @@
         }
 
         // 執行授權處理
-        handleOAuthCallback();
+        await handleOAuthCallback();
+        })();
     </script>
 </body>
 </html>
