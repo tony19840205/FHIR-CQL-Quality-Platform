@@ -3,197 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FHIR CQL Platform - OAuth Redirect</title>
+    <title>SMART on FHIR Launch - FHIR CQL 醫療品質指標平台</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
         }
-        .loading-container {
-            text-align: center;
+
+        .launch-container {
             background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 50px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
         }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
             width: 50px;
             height: 50px;
+            margin: 30px auto;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        h2 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        p {
+
+        .status {
             color: #666;
             font-size: 14px;
-        }
-        .error {
-            color: #e74c3c;
             margin-top: 20px;
             padding: 15px;
-            background: #fadbd8;
-            border-radius: 5px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .info {
+            color: #004085;
+            background: #cce5ff;
+            border: 1px solid #b8daff;
+            font-size: 12px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="loading-container">
+    <div class="launch-container">
+        <div class="logo">🏥</div>
+        <h1>FHIR CQL 醫療品質指標平台</h1>
+        <p class="subtitle">SMART on FHIR Launch</p>
+        
         <div class="spinner"></div>
-        <h2>正在處理 OAuth 授權...</h2>
-        <p id="status">請稍候，系統正在驗證您的授權資訊</p>
-        <div id="error" class="error" style="display: none;"></div>
+        <div class="status" id="status">正在處理 SMART Launch 授權...</div>
+        <div class="info" id="debug"></div>
     </div>
 
     <script>
+        // SMART on FHIR Launch 處理邏輯
         (async function() {
-            console.log('🚀 SMART on FHIR Launch - Redirect Handler');
-            
-            // 取得 URL 參數
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const state = urlParams.get('state');
-            const error = urlParams.get('error');
-            const errorDescription = urlParams.get('error_description');
-            
-            console.log('📋 收到的參數:', {
-                code: code ? '✓ 已接收' : '✗ 未提供',
-                state: state ? '✓ 已接收' : '✗ 未提供',
-                error: error || '無',
-                errorDescription: errorDescription || '無'
-            });
+            const statusEl = document.getElementById('status');
+            const debugEl = document.getElementById('debug');
 
-            // 檢查是否有錯誤
-            if (error) {
-                console.error('❌ OAuth 授權失敗:', error, errorDescription);
-                document.getElementById('status').textContent = 'OAuth 授權失敗';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = `錯誤: ${error}\n${errorDescription || ''}`;
-                return;
-            }
-
-            // 檢查是否有授權碼
-            if (!code) {
-                console.warn('⚠️ 未收到授權碼，可能是直接訪問或參數錯誤');
-                document.getElementById('status').textContent = '未收到授權碼，正在跳轉到首頁...';
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
-                return;
-            }
-
-            // 處理授權碼
-            async function handleOAuthCallback() {
             try {
-                document.getElementById('status').textContent = '正在交換授權碼...';
-                
-                // 從 state 中恢復 FHIR Server URL 和 Token Endpoint
-                let iss = '';
-                let tokenUrl = '';
-                
-                if (state) {
-                    try {
-                        const stateData = JSON.parse(atob(state));
-                        iss = stateData.iss;
-                        tokenUrl = stateData.tokenUrl;
-                        console.log('✓ 恢復的 state 資料:', stateData);
-                    } catch (e) {
-                        console.warn('⚠️ 無法解析 state，使用預設值');
-                        iss = 'https://thas.mohw.gov.tw/v/r4/fhir';
-                    }
-                }
+                // 取得 URL 參數
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const state = urlParams.get('state');
+                const iss = urlParams.get('iss');
+                const launch = urlParams.get('launch');
 
-                // 如果沒有 tokenUrl，嘗試從 FHIR Server 的 metadata 取得
-                if (!tokenUrl && iss) {
-                    document.getElementById('status').textContent = '正在取得授權伺服器資訊...';
-                    const metadataResponse = await fetch(`${iss}/metadata`);
-                    const metadata = await metadataResponse.json();
-                    
-                    const oauth = metadata.rest?.[0]?.security?.extension?.find(
-                        ext => ext.url === 'http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris'
-                    );
-                    
-                    tokenUrl = oauth?.extension?.find(ext => ext.url === 'token')?.valueUri;
-                    console.log('✓ 從 metadata 取得 token endpoint:', tokenUrl);
-                }
+                debugEl.innerHTML = `
+                    <strong>OAuth 參數：</strong><br>
+                    Code: ${code ? '✓ 已接收' : '✗ 未接收'}<br>
+                    State: ${state ? '✓ 已接收' : '✗ 未接收'}<br>
+                    ISS: ${iss || '未提供'}<br>
+                    Launch: ${launch || '未提供'}
+                `;
 
-                if (tokenUrl) {
-                    document.getElementById('status').textContent = '正在取得存取權杖...';
-                    
-                    // 交換授權碼以取得 access token
-                    const tokenResponse = await fetch(tokenUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: new URLSearchParams({
-                            grant_type: 'authorization_code',
-                            code: code,
-                            redirect_uri: window.location.origin + window.location.pathname,
-                            client_id: 'fhir-cql-platform' // 可能需要根據實際情況調整
-                        })
-                    });
-
-                    if (!tokenResponse.ok) {
-                        throw new Error(`Token exchange failed: ${tokenResponse.status}`);
-                    }
-
-                    const tokenData = await tokenResponse.json();
-                    console.log('✓ 成功取得 access token');
-
-                    // 儲存授權資訊
-                    localStorage.setItem('fhirServer', iss);
-                    localStorage.setItem('authToken', tokenData.access_token);
-                    if (tokenData.patient) {
-                        localStorage.setItem('patientId', tokenData.patient);
-                    }
-                    
-                    console.log('✓ 授權資訊已儲存');
-                } else {
-                    console.warn('⚠️ 無法取得 token endpoint，直接儲存授權碼');
-                    // 如果無法取得 token endpoint，直接儲存授權碼和 FHIR Server
+                if (!code) {
+                    // 如果沒有授權碼，可能是第一次進入，需要重定向到授權頁面
                     if (iss) {
-                        localStorage.setItem('fhirServer', iss);
+                        statusEl.textContent = '正在重定向到授權頁面...';
+                        
+                        // 建立授權請求
+                        const redirectUri = window.location.origin + window.location.pathname;
+                        const clientId = 'fhir-cql-quality-platform'; // 你的 Client ID
+                        const scope = 'patient/*.read launch openid fhirUser';
+                        
+                        // 取得 FHIR Server 的授權端點
+                        const metadataUrl = `${iss}/metadata`;
+                        const response = await fetch(metadataUrl);
+                        const metadata = await response.json();
+                        
+                        // 尋找 OAuth 授權端點
+                        const security = metadata.rest[0].security;
+                        const authExtension = security.extension.find(ext => 
+                            ext.url === 'http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris'
+                        );
+                        const authorizeUrl = authExtension.extension.find(ext => ext.url === 'authorize').valueUri;
+                        
+                        // 重定向到授權頁面
+                        const authUrl = `${authorizeUrl}?` +
+                            `response_type=code&` +
+                            `client_id=${encodeURIComponent(clientId)}&` +
+                            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                            `launch=${encodeURIComponent(launch)}&` +
+                            `scope=${encodeURIComponent(scope)}&` +
+                            `state=${encodeURIComponent(state || 'random-state')}&` +
+                            `aud=${encodeURIComponent(iss)}`;
+                        
+                        window.location.href = authUrl;
+                        return;
+                    } else {
+                        throw new Error('缺少必要的 OAuth 參數 (code 或 iss)');
                     }
-                    localStorage.setItem('authCode', code);
                 }
 
-                document.getElementById('status').textContent = '授權成功！正在跳轉...';
-                
-                // 跳轉到主應用程式
+                // 如果有授權碼，處理 token 交換
+                statusEl.textContent = '正在交換存取令牌...';
+
+                // 儲存授權資訊到 localStorage
+                const authData = {
+                    code: code,
+                    state: state,
+                    iss: iss,
+                    timestamp: new Date().toISOString()
+                };
+
+                localStorage.setItem('smart_auth', JSON.stringify(authData));
+                localStorage.setItem('fhirServer', iss);
+
+                // 更新狀態
+                statusEl.className = 'status success';
+                statusEl.textContent = '✓ 授權成功！正在跳轉到主頁面...';
+
+                // 延遲 1.5 秒後跳轉到主頁面
                 setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-                
+                    window.location.href = './index.html?smart_launch=true';
+                }, 1500);
+
             } catch (error) {
-                console.error('❌ 處理授權回調時發生錯誤:', error);
-                document.getElementById('status').textContent = '授權處理失敗';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = `錯誤: ${error.message}`;
+                console.error('SMART Launch Error:', error);
                 
-                // 即使失敗也嘗試跳轉回主頁
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `
+                    <strong>❌ 授權失敗</strong><br>
+                    ${error.message}<br><br>
+                    <small>正在跳轉到主頁面（示範模式）...</small>
+                `;
+
+                debugEl.className = 'info error';
+                debugEl.innerHTML += `<br><strong>錯誤詳情：</strong> ${error.stack}`;
+
+                // 即使失敗也跳轉到主頁面
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = './index.html';
                 }, 3000);
             }
-        }
-
-        // 執行授權處理
-        await handleOAuthCallback();
         })();
     </script>
 </body>
