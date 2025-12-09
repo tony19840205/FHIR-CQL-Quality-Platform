@@ -325,6 +325,10 @@ async function queryIndicator(indicatorId) {
             currentResult = await querySameDaySameDiseaseRevisitRateSample(conn);
         } else if (indicatorId === 'indicator-09') {
             currentResult = await queryReadmissionRateSample(conn);
+        } else if (indicatorId === 'indicator-10') {
+            currentResult = await queryInpatient3DayEDAfterDischargeSample(conn);
+        } else if (indicatorId === 'indicator-13') {
+            currentResult = await queryESWLAverageUtilizationTimesSample(conn);
         } else if (indicatorId === 'indicator-17') {
             currentResult = await queryAcuteMyocardialInfarctionMortalityRateSample(conn);
         } else if (indicatorId === 'indicator-18') {
@@ -1937,13 +1941,29 @@ async function queryInpatient3DayEDAfterDischargeSample(conn, quarter = null) {
     console.log(`  📄 CQL來源: Indicator_10_Inpatient_3Day_ED_After_Discharge_108_01.cql`);
     
     try {
-        // 批次查詢: 先取得該季度的所有住院encounters
-        const inpatientEnc = await conn.query('Encounter', {
+        // 查詢所有住院encounters，然後在記憶體中過濾出院日期
+        const allInpatientEnc = await conn.query('Encounter', {
             class: 'IMP',
             status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
             _count: 2000
         });
+        
+        // 在記憶體中過濾出院日期在季度範圍內的記錄
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        const inpatientEnc = { entry: [] };
+        
+        if (allInpatientEnc.entry) {
+            for (const entry of allInpatientEnc.entry) {
+                const enc = entry.resource;
+                if (enc.period && enc.period.end) {
+                    const dischargeDate = new Date(enc.period.end);
+                    if (dischargeDate >= startDate && dischargeDate <= endDate) {
+                        inpatientEnc.entry.push(entry);
+                    }
+                }
+            }
+        }
         
         if (!inpatientEnc.entry || inpatientEnc.entry.length === 0) {
             console.warn(`  ⚠️ 無住院資料 (${targetQuarter})`);
@@ -1952,15 +1972,29 @@ async function queryInpatient3DayEDAfterDischargeSample(conn, quarter = null) {
         
         console.log(`    找到 ${inpatientEnc.entry.length} 筆住院記錄`);
         
-        // 批次查詢: 取得該季度+7天後的所有急診encounters（因為出院後3天內的急診可能跨季度）
-        const edEndDate = new Date(dateRange.end);
-        edEndDate.setDate(edEndDate.getDate() + 7);
-        const edEnc = await conn.query('Encounter', {
+        // 查詢所有急診encounters，然後在記憶體中過濾日期
+        const allEdEnc = await conn.query('Encounter', {
             class: 'EMER',
             status: 'finished',
-            date: [`ge${dateRange.start}`, `le${edEndDate.toISOString().split('T')[0]}`],
             _count: 2000
         });
+        
+        // 在記憶體中過濾急診日期（季度範圍 + 7天）
+        const edEndDate = new Date(dateRange.end);
+        edEndDate.setDate(edEndDate.getDate() + 7);
+        const edEnc = { entry: [] };
+        
+        if (allEdEnc.entry) {
+            for (const entry of allEdEnc.entry) {
+                const enc = entry.resource;
+                if (enc.period && enc.period.start) {
+                    const edDate = new Date(enc.period.start);
+                    if (edDate >= startDate && edDate <= edEndDate) {
+                        edEnc.entry.push(entry);
+                    }
+                }
+            }
+        }
         
         console.log(`    找到 ${edEnc.entry?.length || 0} 筆急診記錄`);
         
@@ -2456,12 +2490,36 @@ async function queryESWLAverageUtilizationTimesSample(conn, quarter = null) {
     console.log(`  📄 CQL來源: Indicator_13_Average_ESWL_Utilization_Times_20_01Q_1804Y.cql`);
     
     try {
-        // 查詢所有ESWL處置記錄
-        const procedures = await conn.query('Procedure', {
+        // 查詢所有ESWL處置記錄，然後在記憶體中過濾日期
+        const allProcedures = await conn.query('Procedure', {
             status: 'completed',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
             _count: 2000
         });
+        
+        console.log(`    查詢到所有 Procedure 數量: ${allProcedures.entry?.length || 0}`);
+        
+        // 在記憶體中過濾日期範圍
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        console.log(`    日期範圍: ${dateRange.start} ~ ${dateRange.end}`);
+        
+        const procedures = { entry: [] };
+        
+        if (allProcedures.entry) {
+            for (const entry of allProcedures.entry) {
+                const proc = entry.resource;
+                const procDate = proc.performedDateTime || proc.performedPeriod?.start;
+                if (procDate) {
+                    const performedDate = new Date(procDate);
+                    console.log(`      檢查 Procedure ${proc.id}: date=${procDate}, 在範圍內=${performedDate >= startDate && performedDate <= endDate}`);
+                    if (performedDate >= startDate && performedDate <= endDate) {
+                        procedures.entry.push(entry);
+                    }
+                }
+            }
+        }
+        
+        console.log(`    過濾後 Procedure 數量: ${procedures.entry?.length || 0}`);
         
         if (!procedures.entry || procedures.entry.length === 0) {
             console.warn(`  ⚠️ 無ESWL處置資料 (${targetQuarter})`);
@@ -3213,25 +3271,37 @@ async function queryDementiaHospiceCareUtilizationRateSample(conn, quarter = nul
         const outcomePatientIds = getOutcomeQualityPatientIds();
         console.log(`  🔍 使用結果品質病人ID範圍: ${outcomePatientIds[0]} - ${outcomePatientIds[outcomePatientIds.length-1]}`);
         
-        // 🔧 查詢所有encounter並在記憶體中過濾
-        const allEncountersRaw = await conn.query('Encounter', {
-            status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
-            _count: 500
-        });
-        
-        // 過濾出結果品質病人的encounters
+        // 🔧 逐個查詢每個病患的 Encounter（因為 date 參數不支援）
         const allEncounters = [];
-        if (allEncountersRaw.entry) {
-            for (const entry of allEncountersRaw.entry) {
-                const patientRef = entry.resource.subject?.reference;
-                const patientId = patientRef?.split('/')[1];
-                if (patientId && outcomePatientIds.includes(patientId)) {
-                    allEncounters.push(entry);
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        
+        for (const patientId of outcomePatientIds) {
+            try {
+                const patientEncounters = await conn.query('Encounter', {
+                    patient: `Patient/${patientId}`,
+                    status: 'finished',
+                    _count: 100
+                });
+                
+                if (patientEncounters.entry) {
+                    for (const entry of patientEncounters.entry) {
+                        const enc = entry.resource;
+                        // 客戶端過濾日期範圍
+                        if (enc.period && enc.period.start) {
+                            const encDate = new Date(enc.period.start);
+                            if (encDate >= startDate && encDate <= endDate) {
+                                allEncounters.push(entry);
+                            }
+                        }
+                    }
                 }
+            } catch (err) {
+                console.log(`  ⚠️ 查詢病患 ${patientId} 失敗: ${err.message}`);
             }
         }
-        console.log(`  ✅ 找到 ${allEncounters.length} 筆結果品質病人的就診記錄`);
+        
+        console.log(`  ✅ 找到 ${allEncounters.length} 筆結果品質病人的就診記錄 (日期範圍: ${dateRange.start} ~ ${dateRange.end})`);
         
         const encounters = { entry: allEncounters };
         
@@ -3258,12 +3328,15 @@ async function queryDementiaHospiceCareUtilizationRateSample(conn, quarter = nul
             });
             
             let hasDementia = false;
+            let hasHospice = false;
+            
             if (conditions.entry) {
                 for (const condEntry of conditions.entry) {
                     const condition = condEntry.resource;
                     const icd10Code = condition.code?.coding?.find(c => 
                         c.system?.includes('icd-10'))?.code;
                     
+                    // 檢查失智症診斷
                     if (icd10Code && (
                         icd10Code.startsWith('F01') || icd10Code.startsWith('F02') || icd10Code.startsWith('F03') ||
                         icd10Code.startsWith('G30') || icd10Code.startsWith('G31') ||
@@ -3272,7 +3345,11 @@ async function queryDementiaHospiceCareUtilizationRateSample(conn, quarter = nul
                         icd10Code === 'F1927' || icd10Code === 'F1997'
                     )) {
                         hasDementia = true;
-                        break;
+                    }
+                    
+                    // 檢查安寧療護診斷代碼 Z51.5
+                    if (icd10Code && icd10Code.startsWith('Z51.5')) {
+                        hasHospice = true;
                     }
                 }
             }
@@ -3280,21 +3357,26 @@ async function queryDementiaHospiceCareUtilizationRateSample(conn, quarter = nul
             if (hasDementia && patientRef) {
                 dementiaPatients.add(patientRef);
                 
-                // 檢查是否使用安寧照護
-                const procedures = await conn.query('Procedure', {
-                    encounter: `Encounter/${encounterId}`,
-                    status: 'completed',
-                    _count: 20
-                });
-                
-                if (procedures.entry) {
-                    for (const procEntry of procedures.entry) {
-                        const proc = procEntry.resource;
-                        const procCode = proc.code?.coding?.[0]?.code;
-                        
-                        if (procCode && hospiceCodes.includes(procCode)) {
-                            hospicePatients.add(patientRef);
-                            break;
+                // 如果已經在 Condition 中找到 Z51.5，直接加入
+                if (hasHospice) {
+                    hospicePatients.add(patientRef);
+                } else {
+                    // 否則檢查 Procedure 中的安寧照護代碼
+                    const procedures = await conn.query('Procedure', {
+                        encounter: `Encounter/${encounterId}`,
+                        status: 'completed',
+                        _count: 20
+                    });
+                    
+                    if (procedures.entry) {
+                        for (const procEntry of procedures.entry) {
+                            const proc = procEntry.resource;
+                            const procCode = proc.code?.coding?.[0]?.code;
+                            
+                            if (procCode && hospiceCodes.includes(procCode)) {
+                                hospicePatients.add(patientRef);
+                                break;
+                            }
                         }
                     }
                 }
