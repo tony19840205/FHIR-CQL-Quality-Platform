@@ -327,8 +327,16 @@ async function queryIndicator(indicatorId) {
             currentResult = await queryReadmissionRateSample(conn);
         } else if (indicatorId === 'indicator-10') {
             currentResult = await queryInpatient3DayEDAfterDischargeSample(conn);
+        } else if (indicatorId === 'indicator-11-1') {
+            currentResult = await queryCesareanSectionOverallRateSample(conn);
         } else if (indicatorId === 'indicator-13') {
             currentResult = await queryESWLAverageUtilizationTimesSample(conn);
+        } else if (indicatorId === 'indicator-14') {
+            currentResult = await queryUterineFibroidSurgery14DayReadmissionSample(conn);
+        } else if (indicatorId === 'indicator-16') {
+            currentResult = await queryInpatientSurgicalWoundInfectionRateSample(conn);
+        } else if (indicatorId === 'indicator-19') {
+            currentResult = await queryCleanSurgeryWoundInfectionRateSample(conn);
         } else if (indicatorId === 'indicator-17') {
             currentResult = await queryAcuteMyocardialInfarctionMortalityRateSample(conn);
         } else if (indicatorId === 'indicator-18') {
@@ -2076,13 +2084,31 @@ async function queryCesareanSectionOverallRateSample(conn, quarter = null) {
     console.log(`  📄 CQL來源: Indicator_11_1_Overall_Cesarean_Section_Rate_1136_01.cql`);
     
     try {
-        // 批次查詢該季度的所有住院encounters
-        const encounters = await conn.query('Encounter', {
+        // 批次查詢所有住院encounters (不用date參數，改用記憶體過濾)
+        const allEncounters = await conn.query('Encounter', {
             class: 'IMP',
             status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
             _count: 2000
         });
+        
+        // 過濾出日期範圍內的encounters
+        const filteredEncounters = [];
+        if (allEncounters.entry) {
+            for (const entry of allEncounters.entry) {
+                const dischargeDate = entry.resource.period?.end;
+                if (!dischargeDate) continue;
+                
+                const discharge = new Date(dischargeDate);
+                const rangeStart = new Date(dateRange.start);
+                const rangeEnd = new Date(dateRange.end);
+                
+                if (discharge >= rangeStart && discharge <= rangeEnd) {
+                    filteredEncounters.push(entry);
+                }
+            }
+        }
+        
+        const encounters = { entry: filteredEncounters };
         
         if (!encounters.entry || encounters.entry.length === 0) {
             console.warn(`  ⚠️ 無住院資料 (${targetQuarter})`);
@@ -2157,12 +2183,31 @@ async function queryCesareanSectionOverallRateSample(conn, quarter = null) {
         if (conditions.entry && conditions.entry.length > 0) {
             const sample = conditions.entry[0].resource;
             console.log(`    Condition範例:`, sample.code?.coding?.[0]?.code, sample.encounter?.reference);
+            // 顯示前5個Condition的診斷碼
+            console.log(`    🔍 前5個Condition診斷碼:`);
+            for (let i = 0; i < Math.min(5, conditions.entry.length); i++) {
+                const c = conditions.entry[i].resource;
+                const code = c.code?.coding?.[0]?.code || 'no-code';
+                const enc = c.encounter?.reference || 'no-encounter';
+                console.log(`       [${i+1}] Code: ${code}, Encounter: ${enc}`);
+            }
         }
         
         // 檢查每個encounter是否為生產案件
+        let checkedEncounters = 0;
         for (const encId in encounterConds) {
+            checkedEncounters++;
             const conds = encounterConds[encId];
             const procs = encounterProcs[encId] || [];
+            
+            // Debug: 顯示前3個encounter的診斷碼
+            if (checkedEncounters <= 3) {
+                console.log(`    🔍 檢查 Encounter ${encId}:`);
+                conds.forEach(c => {
+                    const code = c.code?.coding?.[0]?.code || 'no-code';
+                    console.log(`       診斷碼: ${code}`);
+                });
+            }
             
             // 檢查是否有產科診斷 (O80, O82等)
             const hasDeliveryDx = conds.some(cond => {
@@ -2388,21 +2433,32 @@ async function queryCleanSurgeryAntibioticOver3DaysRateSample(conn, quarter = nu
         const surgicalPatientIds = getSurgicalQualityPatientIds();
         console.log(`  🔍 使用手術病人ID範圍: ${surgicalPatientIds[0]} - ${surgicalPatientIds[surgicalPatientIds.length-1]}`);
         
-        // 🔧 查詢所有住院encounter並在記憶體中過濾
+        // 🔧 查詢所有住院encounter (不用date參數，改用記憶體過濾)
         const allEncountersRaw = await conn.query('Encounter', {
             class: 'IMP',
             status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
             _count: 500
         });
         
-        // 過濾出手術品質病人的encounters
+        // 過濾出手術品質病人 + 日期範圍內的encounters
         const allEncounters = [];
         if (allEncountersRaw.entry) {
             for (const entry of allEncountersRaw.entry) {
                 const patientRef = entry.resource.subject?.reference;
                 const patientId = patientRef?.split('/')[1];
-                if (patientId && surgicalPatientIds.includes(patientId)) {
+                
+                // 檢查病人ID範圍
+                if (!patientId || !surgicalPatientIds.includes(patientId)) continue;
+                
+                // 檢查出院日期
+                const dischargeDate = entry.resource.period?.end;
+                if (!dischargeDate) continue;
+                
+                const discharge = new Date(dischargeDate);
+                const rangeStart = new Date(dateRange.start);
+                const rangeEnd = new Date(dateRange.end);
+                
+                if (discharge >= rangeStart && discharge <= rangeEnd) {
                     allEncounters.push(entry);
                 }
             }
@@ -2570,26 +2626,37 @@ async function queryUterineFibroidSurgery14DayReadmissionSample(conn, quarter = 
     console.log(`  📄 CQL來源: Indicator_14_Uterine_Fibroid_Surgery_14Day_Readmission_473_01.cql`);
     
     try {
-        // 🆕 使用手術品質專用Patient ID範圍 (TW10001-TW10046)
+        // 使用手術品質專用Patient ID範圍 (TW10001-TW10046)
         const surgicalPatientIds = getSurgicalQualityPatientIds();
         console.log(`  🔍 使用手術病人ID範圍: ${surgicalPatientIds[0]} - ${surgicalPatientIds[surgicalPatientIds.length-1]}`);
         
-        // 🔧 查詢所有住院encounter並在記憶體中過濾
+        // 查詢所有住院encounter，然後在記憶體中過濾
         const allEncountersRaw = await conn.query('Encounter', {
             class: 'IMP',
             status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
             _count: 500
         });
         
-        // 過濾出手術品質病人的encounters
+        // 在記憶體中過濾：1) 手術品質病人 2) 出院日期在季度範圍內
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
         const allEncounters = [];
+        
         if (allEncountersRaw.entry) {
             for (const entry of allEncountersRaw.entry) {
-                const patientRef = entry.resource.subject?.reference;
+                const enc = entry.resource;
+                const patientRef = enc.subject?.reference;
                 const patientId = patientRef?.split('/')[1];
+                
+                // 檢查是否為手術品質病人
                 if (patientId && surgicalPatientIds.includes(patientId)) {
-                    allEncounters.push(entry);
+                    // 檢查出院日期
+                    if (enc.period && enc.period.end) {
+                        const dischargeDate = new Date(enc.period.end);
+                        if (dischargeDate >= startDate && dischargeDate <= endDate) {
+                            allEncounters.push(entry);
+                        }
+                    }
                 }
             }
         }
@@ -3008,22 +3075,33 @@ async function queryInpatientSurgicalWoundInfectionRateSample(conn, quarter = nu
         const surgicalPatientIds = getSurgicalQualityPatientIds();
         console.log(`  🔍 使用手術病人ID範圍: ${surgicalPatientIds[0]} - ${surgicalPatientIds[surgicalPatientIds.length-1]}`);
         
-        // 🔧 查詢所有住院encounter並在記憶體中過濾
+        // 查詢所有住院encounter，然後在記憶體中過濾
         const allEncountersRaw = await conn.query('Encounter', {
             class: 'IMP',
             status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
             _count: 500
         });
         
-        // 過濾出手術品質病人的encounters
+        // 在記憶體中過濾：1) 手術品質病人 2) 出院日期在季度範圍內
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
         const allEncounters = [];
+        
         if (allEncountersRaw.entry) {
             for (const entry of allEncountersRaw.entry) {
-                const patientRef = entry.resource.subject?.reference;
+                const enc = entry.resource;
+                const patientRef = enc.subject?.reference;
                 const patientId = patientRef?.split('/')[1];
+                
+                // 檢查是否為手術品質病人
                 if (patientId && surgicalPatientIds.includes(patientId)) {
-                    allEncounters.push(entry);
+                    // 檢查出院日期
+                    if (enc.period && enc.period.end) {
+                        const dischargeDate = new Date(enc.period.end);
+                        if (dischargeDate >= startDate && dischargeDate <= endDate) {
+                            allEncounters.push(entry);
+                        }
+                    }
                 }
             }
         }
@@ -3408,26 +3486,37 @@ async function queryCleanSurgeryWoundInfectionRateSample(conn, quarter = null) {
     console.log(`  📄 CQL來源: Indicator_19_Clean_Surgery_Wound_Infection_Rate_2524Q_2526Y.cql`);
     
     try {
-        // 🆕 使用手術品質專用Patient ID範圍 (TW10001-TW10046)
+        // 使用手術品質專用Patient ID範圍 (TW10001-TW10046)
         const surgicalPatientIds = getSurgicalQualityPatientIds();
         console.log(`  🔍 使用手術病人ID範圍: ${surgicalPatientIds[0]} - ${surgicalPatientIds[surgicalPatientIds.length-1]}`);
         
-        // 🔧 查詢所有住院encounter並在記憶體中過濾
+        // 查詢所有住院encounter，然後在記憶體中過濾
         const allEncountersRaw = await conn.query('Encounter', {
             class: 'IMP',
             status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
             _count: 500
         });
         
-        // 過濾出手術品質病人的encounters
+        // 在記憶體中過濾：1) 手術品質病人 2) 出院日期在季度範圍內
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
         const allEncounters = [];
+        
         if (allEncountersRaw.entry) {
             for (const entry of allEncountersRaw.entry) {
-                const patientRef = entry.resource.subject?.reference;
+                const enc = entry.resource;
+                const patientRef = enc.subject?.reference;
                 const patientId = patientRef?.split('/')[1];
+                
+                // 檢查是否為手術品質病人
                 if (patientId && surgicalPatientIds.includes(patientId)) {
-                    allEncounters.push(entry);
+                    // 檢查出院日期
+                    if (enc.period && enc.period.end) {
+                        const dischargeDate = new Date(enc.period.end);
+                        if (dischargeDate >= startDate && dischargeDate <= endDate) {
+                            allEncounters.push(entry);
+                        }
+                    }
                 }
             }
         }
