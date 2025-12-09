@@ -325,6 +325,10 @@ async function queryIndicator(indicatorId) {
             currentResult = await querySameDaySameDiseaseRevisitRateSample(conn);
         } else if (indicatorId === 'indicator-09') {
             currentResult = await queryReadmissionRateSample(conn);
+        } else if (indicatorId === 'indicator-17') {
+            currentResult = await queryAcuteMyocardialInfarctionMortalityRateSample(conn);
+        } else if (indicatorId === 'indicator-18') {
+            currentResult = await queryDementiaHospiceCareUtilizationRateSample(conn);
         } else {
             currentResult = await queryGenericIndicatorSample(conn, indicatorId);
         }
@@ -3088,11 +3092,14 @@ async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter =
         let amiPatients = 0;
         let amiDeaths = 0;
         
+        console.log(`\n  🔄 開始逐筆檢查 ${encounters.entry.length} 個 Encounter...`);
+        
         for (const entry of encounters.entry) {
             const encounter = entry.resource;
             const encounterId = encounter.id;
+            const patientRef = encounter.subject?.reference;
             
-            console.log(`  🔍 檢查 Encounter: ${encounterId}`);
+            console.log(`\n  🔍 檢查 Encounter: ${encounterId} (病患: ${patientRef})`);
             
             // 檢查急性心肌梗塞診斷（主診斷ICD-10-CM I21*, I22*）
             const conditions = await conn.query('Condition', {
@@ -3102,17 +3109,21 @@ async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter =
             
             let hasAMI = false;
             if (conditions.entry && conditions.entry.length > 0) {
-                const primaryCondition = conditions.entry[0].resource;
-                console.log(`    📋 找到 Condition，檢查 coding...`);
+                console.log(`    📋 找到 ${conditions.entry.length} 筆 Condition，檢查是否有 AMI...`);
                 
-                const icd10Code = primaryCondition.code?.coding?.find(c => 
-                    c.system?.includes('icd-10'))?.code;
-                
-                console.log(`    🏥 ICD-10 Code: ${icd10Code}`);
-                
-                if (icd10Code && (icd10Code.startsWith('I21') || icd10Code.startsWith('I22'))) {
-                    hasAMI = true;
-                    console.log(`    ✅ 確認為 AMI 病患`);
+                // 檢查所有 Condition，找出是否有 AMI
+                for (const condEntry of conditions.entry) {
+                    const condition = condEntry.resource;
+                    const icd10Code = condition.code?.coding?.find(c => 
+                        c.system?.includes('icd-10'))?.code;
+                    
+                    console.log(`    🏥 Condition ID: ${condition.id}, ICD-10 Code: ${icd10Code}`);
+                    
+                    if (icd10Code && (icd10Code.startsWith('I21') || icd10Code.startsWith('I22'))) {
+                        hasAMI = true;
+                        console.log(`    ✅ 確認為 AMI 病患 (${icd10Code})`);
+                        break; // 找到就跳出
+                    }
                 }
             } else {
                 console.log(`    ⚠️ 沒有找到 Condition`);
@@ -3126,7 +3137,6 @@ async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter =
                 let isDead = false;
                 
                 console.log(`    🔍 檢查死亡狀態...`);
-                console.log(`    📦 Encounter 完整資料:`, JSON.stringify(encounter, null, 2));
                 
                 // 方法1: 檢查 dischargeDisposition coding
                 if (encounter.hospitalization?.dischargeDisposition?.coding) {
@@ -3176,7 +3186,10 @@ async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter =
         const rate = amiPatients > 0 ? 
             ((amiDeaths / amiPatients) * 100).toFixed(2) : '0.00';
         
-        console.log(`    ✅ 急性心肌梗塞死亡率 - 死亡: ${amiDeaths}, AMI病患: ${amiPatients}, 比率: ${rate}%`);
+        console.log(`\n  📊 最終統計結果:`);
+        console.log(`    ☠️ AMI 死亡人數: ${amiDeaths}`);
+        console.log(`    👥 AMI 病患總數: ${amiPatients}`);
+        console.log(`    📈 死亡率: ${rate}%`);
         
         return { rate: rate, numerator: amiDeaths, denominator: amiPatients };
     } catch (error) {
