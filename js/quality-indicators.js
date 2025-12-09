@@ -3046,25 +3046,37 @@ async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter =
         const outcomePatientIds = getOutcomeQualityPatientIds();
         console.log(`  🔍 使用結果品質病人ID範圍: ${outcomePatientIds[0]} - ${outcomePatientIds[outcomePatientIds.length-1]}`);
         
-        // 🔧 查詢所有encounter並在記憶體中過濾
-        const allEncountersRaw = await conn.query('Encounter', {
-            status: 'finished',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
-            _count: 500
-        });
-        
-        // 過濾出結果品質病人的encounters
+        // 🔧 逐個查詢每個病患的 Encounter（因為 date 參數不支援）
         const allEncounters = [];
-        if (allEncountersRaw.entry) {
-            for (const entry of allEncountersRaw.entry) {
-                const patientRef = entry.resource.subject?.reference;
-                const patientId = patientRef?.split('/')[1];
-                if (patientId && outcomePatientIds.includes(patientId)) {
-                    allEncounters.push(entry);
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        
+        for (const patientId of outcomePatientIds) {
+            try {
+                const patientEncounters = await conn.query('Encounter', {
+                    patient: `Patient/${patientId}`,
+                    status: 'finished',
+                    _count: 100
+                });
+                
+                if (patientEncounters.entry) {
+                    for (const entry of patientEncounters.entry) {
+                        const enc = entry.resource;
+                        // 客戶端過濾日期範圍
+                        if (enc.period && enc.period.start) {
+                            const encDate = new Date(enc.period.start);
+                            if (encDate >= startDate && encDate <= endDate) {
+                                allEncounters.push(entry);
+                            }
+                        }
+                    }
                 }
+            } catch (err) {
+                console.log(`  ⚠️ 查詢病患 ${patientId} 失敗: ${err.message}`);
             }
         }
-        console.log(`  ✅ 找到 ${allEncounters.length} 筆結果品質病人的就診記錄`);
+        
+        console.log(`  ✅ 找到 ${allEncounters.length} 筆結果品質病人的就診記錄 (日期範圍: ${dateRange.start} ~ ${dateRange.end})`);
         
         const encounters = { entry: allEncounters };
         
@@ -3080,6 +3092,8 @@ async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter =
             const encounter = entry.resource;
             const encounterId = encounter.id;
             
+            console.log(`  🔍 檢查 Encounter: ${encounterId}`);
+            
             // 檢查急性心肌梗塞診斷（主診斷ICD-10-CM I21*, I22*）
             const conditions = await conn.query('Condition', {
                 encounter: `Encounter/${encounterId}`,
@@ -3089,23 +3103,72 @@ async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter =
             let hasAMI = false;
             if (conditions.entry && conditions.entry.length > 0) {
                 const primaryCondition = conditions.entry[0].resource;
+                console.log(`    📋 找到 Condition，檢查 coding...`);
+                
                 const icd10Code = primaryCondition.code?.coding?.find(c => 
                     c.system?.includes('icd-10'))?.code;
                 
+                console.log(`    🏥 ICD-10 Code: ${icd10Code}`);
+                
                 if (icd10Code && (icd10Code.startsWith('I21') || icd10Code.startsWith('I22'))) {
                     hasAMI = true;
+                    console.log(`    ✅ 確認為 AMI 病患`);
                 }
+            } else {
+                console.log(`    ⚠️ 沒有找到 Condition`);
             }
             
             if (hasAMI) {
                 amiPatients++;
+                console.log(`    ➕ AMI 病患計數: ${amiPatients}`);
                 
-                // 檢查是否死亡（轉歸代碼4或A）
+                // 檢查是否死亡（轉歸代碼4或A，或exp）
+                let isDead = false;
+                
+                console.log(`    🔍 檢查死亡狀態...`);
+                console.log(`    📦 Encounter 完整資料:`, JSON.stringify(encounter, null, 2));
+                
+                // 方法1: 檢查 dischargeDisposition coding
                 if (encounter.hospitalization?.dischargeDisposition?.coding) {
                     const disposition = encounter.hospitalization.dischargeDisposition.coding[0]?.code;
-                    if (disposition === '4' || disposition === 'A') {
-                        amiDeaths++;
+                    console.log(`    🏥 Discharge disposition code: ${disposition}`);
+                    if (disposition === '4' || disposition === 'A' || disposition === 'exp') {
+                        isDead = true;
+                        console.log(`    ☠️ 判定為死亡 (disposition)`);
                     }
+                }
+                
+                // 方法2: 檢查 hospitalization.extension 中的 tran-code
+                if (!isDead && encounter.hospitalization?.extension) {
+                    console.log(`    🔍 檢查 hospitalization.extension...`);
+                    const tranCodeExt = encounter.hospitalization.extension.find(ext => 
+                        ext.url?.includes('tran-code'));
+                    if (tranCodeExt) {
+                        console.log(`    🏥 Tran-code (hospitalization): ${tranCodeExt.valueString}`);
+                        if (tranCodeExt.valueString === '4' || tranCodeExt.valueString === 'A') {
+                            isDead = true;
+                            console.log(`    ☠️ 判定為死亡 (hospitalization tran-code)`);
+                        }
+                    }
+                }
+                
+                // 方法3: 檢查根層級 extension 中的 tran-code
+                if (!isDead && encounter.extension) {
+                    console.log(`    🔍 檢查 root extension...`);
+                    const tranCodeExt = encounter.extension.find(ext => 
+                        ext.url?.includes('tran-code'));
+                    if (tranCodeExt) {
+                        console.log(`    🏥 Tran-code (root): ${tranCodeExt.valueString}`);
+                        if (tranCodeExt.valueString === '4' || tranCodeExt.valueString === 'A') {
+                            isDead = true;
+                            console.log(`    ☠️ 判定為死亡 (root tran-code)`);
+                        }
+                    }
+                }
+                
+                if (isDead) {
+                    amiDeaths++;
+                    console.log(`    ➕ 死亡計數: ${amiDeaths}`);
                 }
             }
         }
@@ -3648,8 +3711,8 @@ async function progressiveLoadQuarters(indicatorId, currentResults) {
     const currentQuarter = getCurrentQuarter();
     console.log(`當前季度: ${currentQuarter}`);
     
-    // 從最新往前載入：2025-Q3 → 2025-Q2 → 2025-Q1 → 2024-Q4 → 2024-Q3 → 2024-Q2 → 2024-Q1
-    const quarters = ['2025-Q3', '2025-Q2', '2025-Q1', '2024-Q4', '2024-Q3', '2024-Q2', '2024-Q1'];
+    // 從最新往前載入：2025-Q4 → 2025-Q3 → 2025-Q2 → 2025-Q1 → 2024-Q4 → 2024-Q3 → 2024-Q2 → 2024-Q1
+    const quarters = ['2025-Q4', '2025-Q3', '2025-Q2', '2025-Q1', '2024-Q4', '2024-Q3', '2024-Q2', '2024-Q1'];
     console.log(`需要載入的季度:`, quarters.filter(q => q !== currentQuarter));
     
     for (let i = 0; i < quarters.length; i++) {
