@@ -1162,25 +1162,53 @@ async function queryDrugOverlapRateSample(conn, indicatorId, quarter = null) {
             continue;
         }
         
-        // 提取給藥期間
-        const dispenseRequest = med.dispenseRequest;
-        if (!dispenseRequest || !dispenseRequest.validityPeriod) continue;
+        // 提取給藥期間（優先從 dosageInstruction 取，其次從 dispenseRequest 取）
+        let startDate, endDate;
         
-        const startDate = new Date(dispenseRequest.validityPeriod.start);
-        let endDate = dispenseRequest.validityPeriod.end ? 
-                       new Date(dispenseRequest.validityPeriod.end) : null;
+        // 方法1: 從 dosageInstruction[0].timing.repeat.boundsPeriod 取得日期
+        const dosageInstruction = med.dosageInstruction?.[0];
+        const boundsPeriod = dosageInstruction?.timing?.repeat?.boundsPeriod;
+        
+        if (boundsPeriod && boundsPeriod.start) {
+            startDate = new Date(boundsPeriod.start);
+            endDate = boundsPeriod.end ? new Date(boundsPeriod.end) : null;
+        }
+        // 方法2: 從 dispenseRequest.validityPeriod 取得日期
+        else if (med.dispenseRequest?.validityPeriod) {
+            startDate = new Date(med.dispenseRequest.validityPeriod.start);
+            endDate = med.dispenseRequest.validityPeriod.end ? 
+                       new Date(med.dispenseRequest.validityPeriod.end) : null;
+        }
+        else {
+            continue; // 無法取得日期，跳過
+        }
         
         if (!endDate) {
             // 如果沒有結束日期，嘗試從給藥天數計算
-            const daysSupply = dispenseRequest.expectedSupplyDuration?.value || 28;
+            const daysSupply = med.dispenseRequest?.expectedSupplyDuration?.value || 28;
             endDate = new Date(startDate);
             endDate.setDate(endDate.getDate() + daysSupply - 1);
         }
         
         const drugDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
         
-        // 依病人+醫院分組
-        const key = `${encounterInfo.patientRef}|${encounterInfo.organizationRef}`;
+        // 🔧 FIX: 依據是否跨院指標使用不同分組邏輯
+        // 同院指標: 依「病人+醫院」分組，只計算同一醫院內的重疊
+        // 跨院指標: 依「病人」分組，計算該病人所有醫院的重疊
+        const key = checker.crossHospital ? 
+            encounterInfo.patientRef : 
+            `${encounterInfo.patientRef}|${encounterInfo.organizationRef}`;
+        
+        // DEBUG: 輸出分組邏輯
+        if (excludedCount.wrongDrug === 0) {
+            console.log(`  🔑 分組邏輯 (${checker.name}):`, {
+                isCrossHospital: checker.crossHospital,
+                key: key,
+                patientRef: encounterInfo.patientRef,
+                orgRef: encounterInfo.organizationRef
+            });
+        }
+        
         if (!prescriptionsByPatientHospital[key]) {
             prescriptionsByPatientHospital[key] = [];
         }
@@ -1205,7 +1233,9 @@ async function queryDrugOverlapRateSample(conn, indicatorId, quarter = null) {
             totalDrugDays += p.drugDays;
         }
         
-        // 分子: 計算同一病人同一醫院的不同處方之間的重疊天數
+        // 分子: 計算不同處方之間的重疊天數
+        // 同院指標: 計算同一病人在同一醫院的不同處方之間的重疊
+        // 跨院指標: 計算同一病人在所有醫院的不同處方之間的重疊
         for (let i = 0; i < prescriptions.length; i++) {
             for (let j = i + 1; j < prescriptions.length; j++) {
                 const p1 = prescriptions[i];
