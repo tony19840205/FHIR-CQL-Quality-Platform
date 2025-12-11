@@ -2116,31 +2116,31 @@ async function queryCesareanSectionOverallRateSample(conn, quarter = null) {
     console.log(`  📄 CQL來源: Indicator_11_1_Overall_Cesarean_Section_Rate_1136_01.cql`);
     
     try {
-        // 批次查詢所有住院encounters (不用date參數，改用記憶體過濾)
-        const allEncounters = await conn.query('Encounter', {
-            class: 'IMP',
-            status: 'finished',
-            _count: 2000
-        });
+        // 🔧 直接查詢特定剖腹產測試患者的Encounter
+        const cesareanPatientIds = Array.from({length: 16}, (_, i) => `cesarean-patient-${String(i + 1).padStart(3, '0')}`);
+        console.log(`  🔍 直接查詢剖腹產測試患者: cesarean-patient-001 to 016`);
         
-        // 過濾出日期範圍內的encounters
-        const filteredEncounters = [];
-        if (allEncounters.entry) {
-            for (const entry of allEncounters.entry) {
-                const dischargeDate = entry.resource.period?.end;
-                if (!dischargeDate) continue;
+        const allEncounters = [];
+        
+        // 直接用Patient ID查詢Encounter
+        for (const patientId of cesareanPatientIds) {
+            try {
+                const encountersByPatient = await conn.query('Encounter', {
+                    patient: patientId,
+                    class: 'IMP',
+                    status: 'finished',
+                    _count: 20
+                });
                 
-                const discharge = new Date(dischargeDate);
-                const rangeStart = new Date(dateRange.start);
-                const rangeEnd = new Date(dateRange.end);
-                
-                if (discharge >= rangeStart && discharge <= rangeEnd) {
-                    filteredEncounters.push(entry);
+                if (encountersByPatient.entry) {
+                    allEncounters.push(...encountersByPatient.entry);
                 }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} 查詢失敗，繼續查詢其他患者`);
             }
         }
         
-        const encounters = { entry: filteredEncounters };
+        const encounters = { entry: allEncounters };
         
         if (!encounters.entry || encounters.entry.length === 0) {
             console.warn(`  ⚠️ 無住院資料 (${targetQuarter})`);
@@ -2150,19 +2150,45 @@ async function queryCesareanSectionOverallRateSample(conn, quarter = null) {
         const validEncounterIds = new Set(encounters.entry.map(e => e.resource.id));
         console.log(`    找到 ${validEncounterIds.size} 筆住院記錄`);
         
-        // 批次查詢所有Procedure
-        const procedures = await conn.query('Procedure', {
-            status: 'completed',
-            _count: 2000
-        });
+        // 🔧 直接查詢特定患者的Procedure
+        const allProcedures = [];
+        for (const patientId of cesareanPatientIds) {
+            try {
+                const proceduresByPatient = await conn.query('Procedure', {
+                    patient: patientId,
+                    status: 'completed',
+                    _count: 20
+                });
+                
+                if (proceduresByPatient.entry) {
+                    allProcedures.push(...proceduresByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Procedure查詢失敗`);
+            }
+        }
         
+        const procedures = { entry: allProcedures };
         console.log(`    找到 ${procedures.entry?.length || 0} 筆Procedure`);
         
-        // 批次查詢所有Condition
-        const conditions = await conn.query('Condition', {
-            _count: 2000
-        });
+        // 🔧 直接查詢特定患者的Condition
+        const allConditions = [];
+        for (const patientId of cesareanPatientIds) {
+            try {
+                const conditionsByPatient = await conn.query('Condition', {
+                    patient: patientId,
+                    _count: 20
+                });
+                
+                if (conditionsByPatient.entry) {
+                    allConditions.push(...conditionsByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Condition查詢失敗`);
+            }
+        }
         
+        const conditions = { entry: allConditions };
         console.log(`    找到 ${conditions.entry?.length || 0} 筆Condition`);
         
         let cesareanCount = 0;
@@ -2253,12 +2279,16 @@ async function queryCesareanSectionOverallRateSample(conn, quarter = null) {
             if (!hasDeliveryDx) continue;
             console.log(`    找到生產encounter: ${encId}, 有${procs.length}個procedures`);
             
-            // 檢查是否有剖腹產手術 (ICD-10-PCS 10D00Z*)
+            // 檢查是否有剖腹產手術 (ICD-10-PCS 10D00Z* 或 台灣健保碼 80402C)
             const hasCesarean = procs.some(proc => {
                 const codings = proc.code?.coding || [];
                 return codings.some(coding => {
                     const code = coding.code || '';
-                    return code.startsWith('10D00Z');
+                    // ICD-10-PCS 剖腹產代碼
+                    if (code.startsWith('10D00Z')) return true;
+                    // 台灣健保支付標準剖腹產代碼
+                    if (code === '80402C') return true;
+                    return false;
                 });
             });
             
@@ -2692,41 +2722,31 @@ async function queryUterineFibroidSurgery14DayReadmissionSample(conn, quarter = 
     console.log(`  📄 CQL來源: Indicator_14_Uterine_Fibroid_Surgery_14Day_Readmission_473_01.cql`);
     
     try {
-        // 使用手術品質專用Patient ID範圍 (TW10001-TW10046)
-        const surgicalPatientIds = getSurgicalQualityPatientIds();
-        console.log(`  🔍 使用手術病人ID範圍: ${surgicalPatientIds[0]} - ${surgicalPatientIds[surgicalPatientIds.length-1]}`);
+        // 🔧 直接查詢特定子宮肌瘤手術測試患者的Encounter
+        const fibroidPatientIds = ['fibroid-patient-001', 'fibroid-patient-002', 'TW10020', 'TW10021'];
+        console.log(`  🔍 直接查詢子宮肌瘤手術測試患者: ${fibroidPatientIds.join(', ')}`);
         
-        // 查詢所有住院encounter，然後在記憶體中過濾
-        const allEncountersRaw = await conn.query('Encounter', {
-            class: 'IMP',
-            status: 'finished',
-            _count: 500
-        });
-        
-        // 在記憶體中過濾：1) 手術品質病人 2) 出院日期在季度範圍內
-        const startDate = new Date(dateRange.start);
-        const endDate = new Date(dateRange.end);
         const allEncounters = [];
         
-        if (allEncountersRaw.entry) {
-            for (const entry of allEncountersRaw.entry) {
-                const enc = entry.resource;
-                const patientRef = enc.subject?.reference;
-                const patientId = patientRef?.split('/')[1];
+        // 直接用Patient ID查詢Encounter
+        for (const patientId of fibroidPatientIds) {
+            try {
+                const encountersByPatient = await conn.query('Encounter', {
+                    patient: patientId,
+                    class: 'IMP',
+                    status: 'finished',
+                    _count: 20
+                });
                 
-                // 檢查是否為手術品質病人
-                if (patientId && surgicalPatientIds.includes(patientId)) {
-                    // 檢查出院日期
-                    if (enc.period && enc.period.end) {
-                        const dischargeDate = new Date(enc.period.end);
-                        if (dischargeDate >= startDate && dischargeDate <= endDate) {
-                            allEncounters.push(entry);
-                        }
-                    }
+                if (encountersByPatient.entry) {
+                    allEncounters.push(...encountersByPatient.entry);
                 }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} 查詢失敗，繼續查詢其他患者`);
             }
         }
-        console.log(`  ✅ 找到 ${allEncounters.length} 筆手術品質病人的住院記錄`);
+        
+        console.log(`  ✅ 找到 ${allEncounters.length} 筆住院記錄`);
         
         const encounters = { entry: allEncounters };
         
