@@ -1539,69 +1539,97 @@ async function queryDiabetesHbA1cTestingRateSample(conn, quarter = null) {
         
         console.log(`    找到 ${validEncounterIds.size} 筆門診記錄`);
         
-        // 批次查詢所有Condition（加上3000筆上限）
-        const conditions = await conn.query('Condition', {
-            _count: 3000
-        });
+        // 🔧 直接查詢每個encounter的Condition
+        const allConditions = [];
+        for (const encId of validEncounterIds) {
+            try {
+                const conditionsByEnc = await conn.query('Condition', {
+                    encounter: `Encounter/${encId}`,
+                    _count: 20
+                });
+                
+                if (conditionsByEnc.entry) {
+                    allConditions.push(...conditionsByEnc.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ Encounter ${encId} Condition查詢失敗`);
+            }
+        }
+        
+        const conditions = { entry: allConditions };
+        console.log(`    找到 ${conditions.entry?.length || 0} 筆Condition`);
         
         if (!conditions.entry || conditions.entry.length === 0) {
             console.warn(`  ⚠️ 無診斷資料`);
             return { rate: '0.00', numerator: 0, denominator: 0 };
         }
         
-        console.log(`    找到 ${conditions.entry.length} 筆Condition (上限3000)`);
-        
         // 找出有糖尿病診斷的encounters
         const diabetesEncounters = new Set();
-        if (conditions.entry) {
-            for (const condEntry of conditions.entry) {
-                const condition = condEntry.resource;
-                const encRef = condition.encounter?.reference;
-                if (!encRef) continue;
-                
-                const encId = encRef.split('/').pop();
-                if (!validEncounterIds.has(encId)) continue;
-                
-                const icd10Code = condition.code?.coding?.find(c => 
-                    c.system?.includes('icd-10'))?.code;
-                
-                if (icd10Code && (
-                    icd10Code.startsWith('E08') || icd10Code.startsWith('E09') ||
-                    icd10Code.startsWith('E10') || icd10Code.startsWith('E11') ||
-                    icd10Code.startsWith('E13')
-                )) {
-                    diabetesEncounters.add(encId);
-                }
+        for (const condEntry of conditions.entry) {
+            const condition = condEntry.resource;
+            const encRef = condition.encounter?.reference;
+            if (!encRef) continue;
+            
+            const encId = encRef.split('/').pop();
+            if (!validEncounterIds.has(encId)) continue;
+            
+            const codings = condition.code?.coding || [];
+            const hasDiabetes = codings.some(c => {
+                const code = c.code || '';
+                return code.startsWith('E08') || code.startsWith('E09') ||
+                       code.startsWith('E10') || code.startsWith('E11') ||
+                       code.startsWith('E13');
+            });
+            
+            if (hasDiabetes) {
+                diabetesEncounters.add(encId);
             }
         }
         
         console.log(`    糖尿病encounters: ${diabetesEncounters.size}`);
         
-        // 批次查詢所有MedicationRequest
-        const medications = await conn.query('MedicationRequest', {
-            status: 'completed',
-            _count: 2000
-        });
+        // 🔧 直接查詢糖尿病encounters的MedicationRequest
+        const allMedications = [];
+        for (const encId of diabetesEncounters) {
+            try {
+                const medicationsByEnc = await conn.query('MedicationRequest', {
+                    encounter: `Encounter/${encId}`,
+                    status: 'completed',
+                    _count: 50
+                });
+                
+                if (medicationsByEnc.entry) {
+                    allMedications.push(...medicationsByEnc.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ Encounter ${encId} MedicationRequest查詢失敗`);
+            }
+        }
+        
+        const medications = { entry: allMedications };
+        console.log(`    找到 ${medications.entry?.length || 0} 筆MedicationRequest`);
         
         // 找出有A10藥物的糖尿病患者
         const diabetesPatients = new Set();
-        if (medications.entry) {
-            for (const medEntry of medications.entry) {
-                const med = medEntry.resource;
-                const encRef = med.encounter?.reference;
-                if (!encRef) continue;
-                
-                const encId = encRef.split('/').pop();
-                if (!diabetesEncounters.has(encId)) continue;
-                
-                const atcCode = med.medicationCodeableConcept?.coding?.find(c =>
-                    c.system?.includes('atc'))?.code;
-                
-                if (atcCode?.startsWith('A10')) {
-                    const patientRef = encounterPatientMap[encId];
-                    if (patientRef) {
-                        diabetesPatients.add(patientRef);
-                    }
+        for (const medEntry of medications.entry) {
+            const med = medEntry.resource;
+            const encRef = med.encounter?.reference;
+            if (!encRef) continue;
+            
+            const encId = encRef.split('/').pop();
+            if (!diabetesEncounters.has(encId)) continue;
+            
+            const codings = med.medicationCodeableConcept?.coding || [];
+            const hasDiabetesMed = codings.some(c => {
+                const code = c.code || '';
+                return code.startsWith('A10');
+            });
+            
+            if (hasDiabetesMed) {
+                const patientRef = encounterPatientMap[encId];
+                if (patientRef) {
+                    diabetesPatients.add(patientRef);
                 }
             }
         }
@@ -1614,30 +1642,43 @@ async function queryDiabetesHbA1cTestingRateSample(conn, quarter = null) {
             return { rate: '0.00', numerator: 0, denominator: 0 };
         }
         
-        // 批次查詢所有Observation（加上3000筆上限）
-        const observations = await conn.query('Observation', {
-            _count: 3000
-        });
+        // 🔧 直接查詢糖尿病患者的Observation
+        const allObservations = [];
+        for (const patientRef of diabetesPatients) {
+            const patientId = patientRef.split('/').pop();
+            try {
+                const observationsByPatient = await conn.query('Observation', {
+                    patient: patientId,
+                    code: '4548-4,17856-6,59261-8',
+                    _count: 20
+                });
+                
+                if (observationsByPatient.entry) {
+                    allObservations.push(...observationsByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Observation查詢失敗`);
+            }
+        }
         
-        console.log(`    找到 ${observations.entry?.length || 0} 筆Observation (上限3000)`);
+        const observations = { entry: allObservations };
+        console.log(`    找到 ${observations.entry?.length || 0} 筆HbA1c Observation`);
         
         const patientsWithHbA1c = new Set();
-        if (observations.entry) {
-            for (const obsEntry of observations.entry) {
-                const obs = obsEntry.resource;
-                const patientRef = obs.subject?.reference;
-                
-                if (!diabetesPatients.has(patientRef)) continue;
-                
-                const loincCode = obs.code?.coding?.find(c =>
-                    c.system?.includes('loinc'))?.code;
-                
-                if (loincCode && (
-                    loincCode === '4548-4' || loincCode === '17856-6' || 
-                    loincCode === '59261-8'
-                )) {
-                    patientsWithHbA1c.add(patientRef);
-                }
+        for (const obsEntry of observations.entry) {
+            const obs = obsEntry.resource;
+            const patientRef = obs.subject?.reference;
+            
+            if (!diabetesPatients.has(patientRef)) continue;
+            
+            const codings = obs.code?.coding || [];
+            const hasHbA1c = codings.some(c => {
+                const code = c.code || '';
+                return code === '4548-4' || code === '17856-6' || code === '59261-8';
+            });
+            
+            if (hasHbA1c) {
+                patientsWithHbA1c.add(patientRef);
             }
         }
         
