@@ -1,0 +1,20 @@
+﻿門診抗生素使用率統計摘要
+查詢期間: 2024-01-01 ~ 2025-11-06
+製表時間: 2025-11-06 22:44:52
+
+各季度抗生素使用統計:
+quarter,antibiotic_claims,hospital_count
+2024Q1,3,2
+2024Q2,2,2
+
+依ATC碼分類統計:
+quarter,atc_class,atc_class_name,claim_count,hospital_count
+2024Q1,J01,Antibacterials - 抗細菌劑,3,2
+2024Q2,J01,Antibacterials - 抗細菌劑,2,2
+
+依給藥途徑統計:
+quarter,route,route_name,claim_count,hospital_count
+2024Q1,PO,Oral - 口服,3,2
+2024Q2,IV,Intravenous - 靜脈注射,1,1
+2024Q2,PO,Oral - 口服,1,1
+

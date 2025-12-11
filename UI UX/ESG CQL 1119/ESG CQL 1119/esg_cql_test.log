@@ -1,0 +1,951 @@
+2025-11-16 21:37:58,200 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 21:37:58,201 - __main__ - INFO - ================================================================================
+2025-11-16 21:37:58,201 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 21:37:58,202 - __main__ - INFO - ================================================================================
+2025-11-16 21:37:58,202 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:37:58,202 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 21:37:58,204 - __main__ - INFO - ================================================================================
+2025-11-16 21:37:58,204 - __main__ - INFO - ✓ HAPI FHIR Test Server: https://hapi.fhir.org/baseR4
+2025-11-16 21:37:58,204 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 21:37:58,205 - fhir_client - INFO - 已初始化 2 個FHIR伺服器連線
+2025-11-16 21:37:58,205 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:37:58,205 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 21:37:58,205 - __main__ - INFO - ================================================================================
+2025-11-16 21:37:58,206 - fhir_client - INFO - 
+============================================================
+2025-11-16 21:37:58,206 - fhir_client - INFO - 正在從 HAPI FHIR Test Server 擷取資料...
+2025-11-16 21:37:58,206 - fhir_client - INFO - ============================================================
+2025-11-16 21:37:58,206 - fhir_client - INFO - 開始從 HAPI FHIR Test Server 擷取所有CQL所需資源...
+2025-11-16 21:37:58,206 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Patient
+2025-11-16 21:37:59,652 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Patient 資料
+2025-11-16 21:37:59,652 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Encounter
+2025-11-16 21:38:00,680 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Encounter 資料
+2025-11-16 21:38:00,681 - fhir_client - INFO - 請求 HAPI FHIR Test Server: MedicationRequest
+2025-11-16 21:38:01,679 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 MedicationRequest 資料
+2025-11-16 21:38:01,680 - fhir_client - INFO - 請求 HAPI FHIR Test Server: MedicationAdministration
+2025-11-16 21:38:02,790 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 MedicationAdministration 資料
+2025-11-16 21:38:02,791 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Observation
+2025-11-16 21:38:03,667 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Observation 資料
+2025-11-16 21:38:03,668 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Procedure
+2025-11-16 21:38:04,669 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Procedure 資料
+2025-11-16 21:38:04,670 - fhir_client - INFO - 請求 HAPI FHIR Test Server: DocumentReference
+2025-11-16 21:38:05,705 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 DocumentReference 資料
+2025-11-16 21:38:05,706 - fhir_client - INFO - 請求 HAPI FHIR Test Server: DiagnosticReport
+2025-11-16 21:38:06,712 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 DiagnosticReport 資料
+2025-11-16 21:38:06,713 - fhir_client - INFO - 從 HAPI FHIR Test Server 共取得 160 筆資源
+2025-11-16 21:38:06,714 - fhir_client - INFO -   - Patient: 20 筆
+2025-11-16 21:38:06,715 - fhir_client - INFO -   - Encounter: 20 筆
+2025-11-16 21:38:06,715 - fhir_client - INFO -   - MedicationRequest: 20 筆
+2025-11-16 21:38:06,716 - fhir_client - INFO -   - MedicationAdministration: 20 筆
+2025-11-16 21:38:06,717 - fhir_client - INFO -   - Observation: 20 筆
+2025-11-16 21:38:06,717 - fhir_client - INFO -   - Procedure: 20 筆
+2025-11-16 21:38:06,718 - fhir_client - INFO -   - DocumentReference: 20 筆
+2025-11-16 21:38:06,718 - fhir_client - INFO -   - DiagnosticReport: 20 筆
+2025-11-16 21:38:06,719 - fhir_client - INFO - 
+============================================================
+2025-11-16 21:38:06,720 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 21:38:06,720 - fhir_client - INFO - ============================================================
+2025-11-16 21:38:06,720 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 21:38:06,721 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 21:38:09,780 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 21:38:09,781 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 21:38:10,144 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 21:38:10,145 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 21:38:10,675 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 21:38:10,676 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 21:38:11,048 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 21:38:11,049 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 21:38:11,371 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 21:38:11,372 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 21:38:11,710 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 21:38:11,711 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 21:38:12,189 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 21:38:12,190 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 21:38:12,740 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 21:38:12,741 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 21:38:12,742 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 21:38:12,742 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 21:38:12,743 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 21:38:12,744 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 21:38:12,744 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 21:38:12,745 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 21:38:12,746 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 21:38:12,746 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 21:38:12,747 - fhir_client - INFO - 
+合併後總計 510 筆資源（已去重）
+2025-11-16 21:38:12,747 - fhir_client - INFO -   - Patient: 70 筆
+2025-11-16 21:38:12,748 - fhir_client - INFO -   - Encounter: 70 筆
+2025-11-16 21:38:12,748 - fhir_client - INFO -   - MedicationRequest: 70 筆
+2025-11-16 21:38:12,749 - fhir_client - INFO -   - MedicationAdministration: 70 筆
+2025-11-16 21:38:12,749 - fhir_client - INFO -   - Observation: 70 筆
+2025-11-16 21:38:12,750 - fhir_client - INFO -   - Procedure: 70 筆
+2025-11-16 21:38:12,750 - fhir_client - INFO -   - DocumentReference: 20 筆
+2025-11-16 21:38:12,751 - fhir_client - INFO -   - DiagnosticReport: 70 筆
+2025-11-16 21:38:12,751 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:38:12,751 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 21:38:12,752 - __main__ - INFO - ================================================================================
+2025-11-16 21:38:12,752 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 21:38:12,753 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 21:38:12,753 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 21:38:12,765 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 21:38:12,766 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 21:38:12,780 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 21:38:12,780 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 21:38:12,793 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 21:38:12,793 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 21:38:12,794 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 21:38:12,794 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 21:38:12,794 - cql_processor - INFO - 抗生素使用率計算完成: 27.14%
+2025-11-16 21:38:12,794 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 21:38:12,795 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 21:38:12,795 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 21:38:12,796 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 175.0 kg
+2025-11-16 21:38:12,796 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 21:38:12,796 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:38:12,797 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 21:38:12,797 - __main__ - INFO - ================================================================================
+2025-11-16 21:38:12,797 - data_filter - INFO - 時間範圍: 2023-11-17 至 2025-11-16 (2年)
+2025-11-16 21:38:12,803 - data_filter - INFO - Encounter: 70 -> 0 筆（已過濾）
+2025-11-16 21:38:12,805 - data_filter - INFO - MedicationRequest: 70 -> 6 筆（已過濾）
+2025-11-16 21:38:12,807 - data_filter - INFO - MedicationAdministration: 70 -> 6 筆（已過濾）
+2025-11-16 21:38:12,809 - data_filter - INFO - Observation: 70 -> 1 筆（已過濾）
+2025-11-16 21:38:12,810 - data_filter - INFO - Procedure: 70 -> 0 筆（已過濾）
+2025-11-16 21:38:12,811 - data_filter - INFO - DocumentReference: 20 -> 1 筆（已過濾）
+2025-11-16 21:38:12,812 - data_filter - INFO - DiagnosticReport: 70 -> 0 筆（已過濾）
+2025-11-16 21:38:12,813 - data_filter - INFO - 已提取 70 位病患的基本資料
+2025-11-16 21:38:12,814 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:38:12,814 - __main__ - INFO - 測試結果總覽
+2025-11-16 21:38:12,814 - __main__ - INFO - ================================================================================
+2025-11-16 21:38:12,821 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 21:38:12,822 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:38:12,822 - __main__ - INFO - 測試完成！
+2025-11-16 21:38:12,822 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:36,544 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 21:49:36,547 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:36,548 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 21:49:36,549 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:36,549 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:49:36,549 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 21:49:36,550 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:36,551 - __main__ - INFO - ✓ HAPI FHIR Test Server: https://hapi.fhir.org/baseR4
+2025-11-16 21:49:36,551 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 21:49:36,552 - fhir_client - INFO - 已初始化 2 個FHIR伺服器連線
+2025-11-16 21:49:36,552 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:49:36,553 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 21:49:36,553 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:36,553 - fhir_client - INFO - 
+============================================================
+2025-11-16 21:49:36,554 - fhir_client - INFO - 正在從 HAPI FHIR Test Server 擷取資料...
+2025-11-16 21:49:36,554 - fhir_client - INFO - ============================================================
+2025-11-16 21:49:36,554 - fhir_client - INFO - 開始從 HAPI FHIR Test Server 擷取所有CQL所需資源...
+2025-11-16 21:49:36,554 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Patient
+2025-11-16 21:49:37,845 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Patient 資料
+2025-11-16 21:49:37,846 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Encounter
+2025-11-16 21:49:38,868 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Encounter 資料
+2025-11-16 21:49:38,868 - fhir_client - INFO - 請求 HAPI FHIR Test Server: MedicationRequest
+2025-11-16 21:49:39,867 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 MedicationRequest 資料
+2025-11-16 21:49:39,868 - fhir_client - INFO - 請求 HAPI FHIR Test Server: MedicationAdministration
+2025-11-16 21:49:40,959 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 MedicationAdministration 資料
+2025-11-16 21:49:40,960 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Observation
+2025-11-16 21:49:41,857 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Observation 資料
+2025-11-16 21:49:41,859 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Procedure
+2025-11-16 21:49:42,864 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Procedure 資料
+2025-11-16 21:49:42,865 - fhir_client - INFO - 請求 HAPI FHIR Test Server: DocumentReference
+2025-11-16 21:49:43,891 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 DocumentReference 資料
+2025-11-16 21:49:43,892 - fhir_client - INFO - 請求 HAPI FHIR Test Server: DiagnosticReport
+2025-11-16 21:49:44,891 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 DiagnosticReport 資料
+2025-11-16 21:49:44,892 - fhir_client - INFO - 從 HAPI FHIR Test Server 共取得 160 筆資源
+2025-11-16 21:49:44,894 - fhir_client - INFO -   - Patient: 20 筆
+2025-11-16 21:49:44,894 - fhir_client - INFO -   - Encounter: 20 筆
+2025-11-16 21:49:44,895 - fhir_client - INFO -   - MedicationRequest: 20 筆
+2025-11-16 21:49:44,896 - fhir_client - INFO -   - MedicationAdministration: 20 筆
+2025-11-16 21:49:44,897 - fhir_client - INFO -   - Observation: 20 筆
+2025-11-16 21:49:44,898 - fhir_client - INFO -   - Procedure: 20 筆
+2025-11-16 21:49:44,898 - fhir_client - INFO -   - DocumentReference: 20 筆
+2025-11-16 21:49:44,899 - fhir_client - INFO -   - DiagnosticReport: 20 筆
+2025-11-16 21:49:44,900 - fhir_client - INFO - 
+============================================================
+2025-11-16 21:49:44,901 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 21:49:44,902 - fhir_client - INFO - ============================================================
+2025-11-16 21:49:44,903 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 21:49:44,904 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 21:49:48,117 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 21:49:48,120 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 21:49:48,433 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 21:49:48,434 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 21:49:48,767 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 21:49:48,768 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 21:49:49,063 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 21:49:49,064 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 21:49:49,379 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 21:49:49,380 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 21:49:49,679 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 21:49:49,680 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 21:49:49,919 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 21:49:49,920 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 21:49:50,215 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 21:49:50,216 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 21:49:50,216 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 21:49:50,217 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 21:49:50,217 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 21:49:50,218 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 21:49:50,218 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 21:49:50,219 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 21:49:50,220 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 21:49:50,220 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 21:49:50,221 - fhir_client - INFO - 
+合併後總計 510 筆資源（已去重）
+2025-11-16 21:49:50,221 - fhir_client - INFO -   - Patient: 70 筆
+2025-11-16 21:49:50,222 - fhir_client - INFO -   - Encounter: 70 筆
+2025-11-16 21:49:50,222 - fhir_client - INFO -   - MedicationRequest: 70 筆
+2025-11-16 21:49:50,222 - fhir_client - INFO -   - MedicationAdministration: 70 筆
+2025-11-16 21:49:50,222 - fhir_client - INFO -   - Observation: 70 筆
+2025-11-16 21:49:50,223 - fhir_client - INFO -   - Procedure: 70 筆
+2025-11-16 21:49:50,223 - fhir_client - INFO -   - DocumentReference: 20 筆
+2025-11-16 21:49:50,223 - fhir_client - INFO -   - DiagnosticReport: 70 筆
+2025-11-16 21:49:50,224 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:49:50,224 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 21:49:50,224 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:50,224 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 21:49:50,225 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 21:49:50,225 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 21:49:50,226 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 21:49:50,226 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 21:49:50,227 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 21:49:50,227 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 21:49:50,227 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 21:49:50,228 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 21:49:50,228 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 21:49:50,228 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 21:49:50,228 - cql_processor - INFO - 抗生素使用率計算完成: 27.14%
+2025-11-16 21:49:50,229 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 21:49:50,230 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 21:49:50,231 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 21:49:50,232 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 175.0 kg
+2025-11-16 21:49:50,233 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 21:49:50,234 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:49:50,234 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 21:49:50,235 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:50,235 - data_filter - INFO - 時間範圍: 2023-11-17 至 2025-11-16 (2年)
+2025-11-16 21:49:50,246 - data_filter - INFO - Encounter: 70 -> 0 筆（已過濾）
+2025-11-16 21:49:50,252 - data_filter - INFO - MedicationRequest: 70 -> 6 筆（已過濾）
+2025-11-16 21:49:50,254 - data_filter - INFO - MedicationAdministration: 70 -> 6 筆（已過濾）
+2025-11-16 21:49:50,258 - data_filter - INFO - Observation: 70 -> 1 筆（已過濾）
+2025-11-16 21:49:50,263 - data_filter - INFO - Procedure: 70 -> 0 筆（已過濾）
+2025-11-16 21:49:50,264 - data_filter - INFO - DocumentReference: 20 -> 1 筆（已過濾）
+2025-11-16 21:49:50,267 - data_filter - INFO - DiagnosticReport: 70 -> 0 筆（已過濾）
+2025-11-16 21:49:50,271 - data_filter - INFO - 已提取 70 位病患的基本資料
+2025-11-16 21:49:50,272 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:49:50,273 - __main__ - INFO - 測試結果總覽
+2025-11-16 21:49:50,273 - __main__ - INFO - ================================================================================
+2025-11-16 21:49:50,288 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 21:49:50,289 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:49:50,290 - __main__ - INFO - 測試完成！
+2025-11-16 21:49:50,290 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:37,066 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 21:57:37,068 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:37,069 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 21:57:37,070 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:37,070 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:57:37,071 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 21:57:37,071 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:37,072 - __main__ - INFO - ✓ HAPI FHIR Test Server: https://hapi.fhir.org/baseR4
+2025-11-16 21:57:37,072 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 21:57:37,073 - fhir_client - INFO - 已初始化 2 個FHIR伺服器連線
+2025-11-16 21:57:37,073 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:57:37,073 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 21:57:37,074 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:37,074 - fhir_client - INFO - 
+============================================================
+2025-11-16 21:57:37,075 - fhir_client - INFO - 正在從 HAPI FHIR Test Server 擷取資料...
+2025-11-16 21:57:37,075 - fhir_client - INFO - ============================================================
+2025-11-16 21:57:37,075 - fhir_client - INFO - 開始從 HAPI FHIR Test Server 擷取所有CQL所需資源...
+2025-11-16 21:57:37,076 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Patient
+2025-11-16 21:57:38,354 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Patient 資料
+2025-11-16 21:57:38,357 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Encounter
+2025-11-16 21:57:39,711 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Encounter 資料
+2025-11-16 21:57:39,712 - fhir_client - INFO - 請求 HAPI FHIR Test Server: MedicationRequest
+2025-11-16 21:57:40,783 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 MedicationRequest 資料
+2025-11-16 21:57:40,784 - fhir_client - INFO - 請求 HAPI FHIR Test Server: MedicationAdministration
+2025-11-16 21:57:41,391 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 MedicationAdministration 資料
+2025-11-16 21:57:41,391 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Observation
+2025-11-16 21:57:42,362 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Observation 資料
+2025-11-16 21:57:42,363 - fhir_client - INFO - 請求 HAPI FHIR Test Server: Procedure
+2025-11-16 21:57:43,413 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 Procedure 資料
+2025-11-16 21:57:43,413 - fhir_client - INFO - 請求 HAPI FHIR Test Server: DocumentReference
+2025-11-16 21:57:44,350 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 DocumentReference 資料
+2025-11-16 21:57:44,352 - fhir_client - INFO - 請求 HAPI FHIR Test Server: DiagnosticReport
+2025-11-16 21:57:45,353 - fhir_client - INFO - 成功從 HAPI FHIR Test Server 取得 DiagnosticReport 資料
+2025-11-16 21:57:45,353 - fhir_client - INFO - 從 HAPI FHIR Test Server 共取得 160 筆資源
+2025-11-16 21:57:45,353 - fhir_client - INFO -   - Patient: 20 筆
+2025-11-16 21:57:45,353 - fhir_client - INFO -   - Encounter: 20 筆
+2025-11-16 21:57:45,354 - fhir_client - INFO -   - MedicationRequest: 20 筆
+2025-11-16 21:57:45,354 - fhir_client - INFO -   - MedicationAdministration: 20 筆
+2025-11-16 21:57:45,354 - fhir_client - INFO -   - Observation: 20 筆
+2025-11-16 21:57:45,354 - fhir_client - INFO -   - Procedure: 20 筆
+2025-11-16 21:57:45,355 - fhir_client - INFO -   - DocumentReference: 20 筆
+2025-11-16 21:57:45,355 - fhir_client - INFO -   - DiagnosticReport: 20 筆
+2025-11-16 21:57:45,355 - fhir_client - INFO - 
+============================================================
+2025-11-16 21:57:45,355 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 21:57:45,355 - fhir_client - INFO - ============================================================
+2025-11-16 21:57:45,356 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 21:57:45,356 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 21:57:48,212 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 21:57:48,213 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 21:57:48,484 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 21:57:48,484 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 21:57:48,787 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 21:57:48,788 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 21:57:49,075 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 21:57:49,076 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 21:57:49,358 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 21:57:49,359 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 21:57:49,659 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 21:57:49,660 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 21:57:49,900 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 21:57:49,901 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 21:57:50,202 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 21:57:50,203 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 21:57:50,203 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 21:57:50,203 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 21:57:50,204 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 21:57:50,204 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 21:57:50,204 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 21:57:50,204 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 21:57:50,204 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 21:57:50,204 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 21:57:50,205 - fhir_client - INFO - 
+合併後總計 510 筆資源（已去重）
+2025-11-16 21:57:50,205 - fhir_client - INFO -   - Patient: 70 筆
+2025-11-16 21:57:50,205 - fhir_client - INFO -   - Encounter: 70 筆
+2025-11-16 21:57:50,205 - fhir_client - INFO -   - MedicationRequest: 70 筆
+2025-11-16 21:57:50,206 - fhir_client - INFO -   - MedicationAdministration: 70 筆
+2025-11-16 21:57:50,206 - fhir_client - INFO -   - Observation: 70 筆
+2025-11-16 21:57:50,206 - fhir_client - INFO -   - Procedure: 70 筆
+2025-11-16 21:57:50,206 - fhir_client - INFO -   - DocumentReference: 20 筆
+2025-11-16 21:57:50,206 - fhir_client - INFO -   - DiagnosticReport: 70 筆
+2025-11-16 21:57:50,206 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:57:50,207 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 21:57:50,207 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:50,207 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 21:57:50,207 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 21:57:50,208 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 21:57:50,208 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 21:57:50,209 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 21:57:50,209 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 21:57:50,210 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 21:57:50,210 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 21:57:50,210 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 21:57:50,210 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 21:57:50,211 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 21:57:50,211 - cql_processor - INFO - 抗生素使用率計算完成: 27.14%
+2025-11-16 21:57:50,211 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 21:57:50,211 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 21:57:50,212 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 21:57:50,212 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 175.0 kg
+2025-11-16 21:57:50,212 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 21:57:50,212 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:57:50,212 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 21:57:50,213 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:50,213 - data_filter - INFO - 時間範圍: 2023-11-17 至 2025-11-16 (2年)
+2025-11-16 21:57:50,217 - data_filter - INFO - Encounter: 70 -> 0 筆（已過濾）
+2025-11-16 21:57:50,219 - data_filter - INFO - MedicationRequest: 70 -> 6 筆（已過濾）
+2025-11-16 21:57:50,220 - data_filter - INFO - MedicationAdministration: 70 -> 6 筆（已過濾）
+2025-11-16 21:57:50,222 - data_filter - INFO - Observation: 70 -> 1 筆（已過濾）
+2025-11-16 21:57:50,223 - data_filter - INFO - Procedure: 70 -> 0 筆（已過濾）
+2025-11-16 21:57:50,224 - data_filter - INFO - DocumentReference: 20 -> 1 筆（已過濾）
+2025-11-16 21:57:50,227 - data_filter - INFO - DiagnosticReport: 70 -> 0 筆（已過濾）
+2025-11-16 21:57:50,229 - data_filter - INFO - 已提取 70 位病患的基本資料
+2025-11-16 21:57:50,232 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:57:50,232 - __main__ - INFO - 測試結果總覽
+2025-11-16 21:57:50,234 - __main__ - INFO - ================================================================================
+2025-11-16 21:57:50,244 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 21:57:50,244 - __main__ - INFO - 
+================================================================================
+2025-11-16 21:57:50,245 - __main__ - INFO - 測試完成！
+2025-11-16 21:57:50,245 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:54,085 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 22:01:54,085 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:54,086 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 22:01:54,086 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:54,086 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:01:54,087 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 22:01:54,087 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:54,087 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 22:01:54,088 - fhir_client - INFO - 已初始化 1 個FHIR伺服器連線
+2025-11-16 22:01:54,088 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:01:54,088 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 22:01:54,089 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:54,089 - fhir_client - INFO - 
+============================================================
+2025-11-16 22:01:54,089 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 22:01:54,089 - fhir_client - INFO - ============================================================
+2025-11-16 22:01:54,090 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 22:01:54,090 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 22:01:56,604 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 22:01:56,605 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 22:01:56,889 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 22:01:56,890 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 22:01:57,217 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 22:01:57,218 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 22:01:57,488 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 22:01:57,490 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 22:01:57,782 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 22:01:57,783 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 22:01:58,055 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 22:01:58,057 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 22:01:58,273 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 22:01:58,275 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 22:01:58,583 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 22:01:58,584 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 22:01:58,585 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:01:58,585 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:01:58,585 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:01:58,586 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:01:58,586 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:01:58,586 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:01:58,587 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 22:01:58,587 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:01:58,588 - fhir_client - INFO - 
+合併後總計 350 筆資源（已去重）
+2025-11-16 22:01:58,588 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:01:58,588 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:01:58,589 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:01:58,589 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:01:58,589 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:01:58,589 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:01:58,589 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:01:58,589 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:01:58,590 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 22:01:58,590 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:58,590 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 22:01:58,590 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 22:01:58,590 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 22:01:58,591 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 22:01:58,591 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 22:01:58,592 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 22:01:58,592 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 22:01:58,592 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 22:01:58,592 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 22:01:58,592 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 22:01:58,593 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 22:01:58,593 - cql_processor - INFO - 抗生素使用率計算完成: 24.0%
+2025-11-16 22:01:58,593 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 22:01:58,593 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 22:01:58,593 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 22:01:58,593 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 125.0 kg
+2025-11-16 22:01:58,593 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 22:01:58,593 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:01:58,594 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 22:01:58,594 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:58,594 - data_filter - INFO - 時間範圍: 2020-11-17 至 2025-11-16 (5年)
+2025-11-16 22:01:58,597 - data_filter - INFO - Encounter: 50 -> 1 筆（已過濾）
+2025-11-16 22:01:58,598 - data_filter - INFO - MedicationRequest: 50 -> 1 筆（已過濾）
+2025-11-16 22:01:58,599 - data_filter - INFO - MedicationAdministration: 50 -> 0 筆（已過濾）
+2025-11-16 22:01:58,600 - data_filter - INFO - Observation: 50 -> 1 筆（已過濾）
+2025-11-16 22:01:58,601 - data_filter - INFO - Procedure: 50 -> 1 筆（已過濾）
+2025-11-16 22:01:58,603 - data_filter - INFO - DiagnosticReport: 50 -> 2 筆（已過濾）
+2025-11-16 22:01:58,605 - data_filter - INFO - 已提取 50 位病患的基本資料
+2025-11-16 22:01:58,605 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:01:58,605 - __main__ - INFO - 測試結果總覽
+2025-11-16 22:01:58,605 - __main__ - INFO - ================================================================================
+2025-11-16 22:01:58,610 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 22:01:58,610 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:01:58,611 - __main__ - INFO - 測試完成！
+2025-11-16 22:01:58,611 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:12,999 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 22:03:13,000 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:13,000 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 22:03:13,001 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:13,001 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:13,002 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 22:03:13,002 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:13,003 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 22:03:13,003 - fhir_client - INFO - 已初始化 1 個FHIR伺服器連線
+2025-11-16 22:03:13,004 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:13,004 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 22:03:13,005 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:13,005 - fhir_client - INFO - 
+============================================================
+2025-11-16 22:03:13,005 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 22:03:13,006 - fhir_client - INFO - ============================================================
+2025-11-16 22:03:13,006 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 22:03:13,006 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 22:03:15,547 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 22:03:15,548 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 22:03:15,821 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 22:03:15,823 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 22:03:16,130 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 22:03:16,131 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 22:03:16,392 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 22:03:16,393 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 22:03:16,681 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 22:03:16,683 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 22:03:16,962 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 22:03:16,963 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 22:03:17,196 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 22:03:17,196 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 22:03:17,513 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 22:03:17,515 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 22:03:17,515 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:03:17,516 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:03:17,517 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:03:17,517 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:03:17,518 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:03:17,519 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:03:17,519 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 22:03:17,520 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:03:17,520 - fhir_client - INFO - 
+合併後總計 350 筆資源（已去重）
+2025-11-16 22:03:17,520 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:03:17,520 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:03:17,521 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:03:17,521 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:03:17,521 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:03:17,522 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:03:17,522 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:03:17,522 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:17,523 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 22:03:17,523 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:17,523 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 22:03:17,523 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 22:03:17,523 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 22:03:17,524 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 22:03:17,524 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 22:03:17,525 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 22:03:17,525 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 22:03:17,525 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 22:03:17,525 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 22:03:17,526 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 22:03:17,526 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 22:03:17,526 - cql_processor - INFO - 抗生素使用率計算完成: 24.0%
+2025-11-16 22:03:17,526 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 22:03:17,526 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 22:03:17,526 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 22:03:17,527 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 125.0 kg
+2025-11-16 22:03:17,527 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 22:03:17,527 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:17,527 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 22:03:17,527 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:17,527 - data_filter - INFO - 時間範圍: 2020-11-17 至 2025-11-16 (5年)
+2025-11-16 22:03:17,530 - data_filter - INFO - Encounter: 50 -> 1 筆（已過濾）
+2025-11-16 22:03:17,531 - data_filter - INFO - MedicationRequest: 50 -> 1 筆（已過濾）
+2025-11-16 22:03:17,532 - data_filter - INFO - MedicationAdministration: 50 -> 0 筆（已過濾）
+2025-11-16 22:03:17,533 - data_filter - INFO - Observation: 50 -> 1 筆（已過濾）
+2025-11-16 22:03:17,534 - data_filter - INFO - Procedure: 50 -> 1 筆（已過濾）
+2025-11-16 22:03:17,535 - data_filter - INFO - DiagnosticReport: 50 -> 2 筆（已過濾）
+2025-11-16 22:03:17,536 - data_filter - INFO - 已提取 50 位病患的基本資料
+2025-11-16 22:03:17,536 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:17,536 - __main__ - INFO - 測試結果總覽
+2025-11-16 22:03:17,536 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:17,542 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 22:03:17,542 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:17,542 - __main__ - INFO - 測試完成！
+2025-11-16 22:03:17,543 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:58,014 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 22:03:58,015 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:58,015 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 22:03:58,016 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:58,016 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:58,016 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 22:03:58,016 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:58,017 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 22:03:58,017 - fhir_client - INFO - 已初始化 1 個FHIR伺服器連線
+2025-11-16 22:03:58,018 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:03:58,018 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 22:03:58,018 - __main__ - INFO - ================================================================================
+2025-11-16 22:03:58,018 - fhir_client - INFO - 
+============================================================
+2025-11-16 22:03:58,019 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 22:03:58,019 - fhir_client - INFO - ============================================================
+2025-11-16 22:03:58,019 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 22:03:58,020 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 22:03:59,991 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 22:03:59,992 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 22:04:00,529 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 22:04:00,531 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 22:04:00,809 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 22:04:00,811 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 22:04:01,066 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 22:04:01,067 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 22:04:01,345 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 22:04:01,346 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 22:04:01,856 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 22:04:01,857 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 22:04:02,057 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 22:04:02,058 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 22:04:02,358 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 22:04:02,359 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 22:04:02,359 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:04:02,360 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:04:02,360 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:04:02,361 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:04:02,361 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:04:02,362 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:04:02,362 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 22:04:02,362 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:04:02,363 - fhir_client - INFO - 
+合併後總計 350 筆資源（已去重）
+2025-11-16 22:04:02,363 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:04:02,363 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:04:02,363 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:04:02,364 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:04:02,364 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:04:02,364 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:04:02,364 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:04:02,364 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:02,364 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 22:04:02,365 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:02,365 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 22:04:02,365 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 22:04:02,365 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 22:04:02,366 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 22:04:02,366 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 22:04:02,366 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 22:04:02,366 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 22:04:02,367 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 22:04:02,367 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 22:04:02,367 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 22:04:02,367 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 22:04:02,367 - cql_processor - INFO - 抗生素使用率計算完成: 24.0%
+2025-11-16 22:04:02,367 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 22:04:02,368 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 22:04:02,368 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 22:04:02,368 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 125.0 kg
+2025-11-16 22:04:02,368 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 22:04:02,368 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:02,368 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 22:04:02,368 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:02,369 - data_filter - INFO - 時間範圍: 2020-11-17 至 2025-11-16 (5年)
+2025-11-16 22:04:02,372 - data_filter - INFO - Encounter: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:02,373 - data_filter - INFO - MedicationRequest: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:02,374 - data_filter - INFO - MedicationAdministration: 50 -> 0 筆（已過濾）
+2025-11-16 22:04:02,375 - data_filter - INFO - Observation: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:02,376 - data_filter - INFO - Procedure: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:02,377 - data_filter - INFO - DiagnosticReport: 50 -> 2 筆（已過濾）
+2025-11-16 22:04:02,378 - data_filter - INFO - 已提取 50 位病患的基本資料
+2025-11-16 22:04:02,378 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:02,378 - __main__ - INFO - 測試結果總覽
+2025-11-16 22:04:02,378 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:02,383 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 22:04:02,383 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:02,383 - __main__ - INFO - 測試完成！
+2025-11-16 22:04:02,384 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:36,893 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 22:04:36,893 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:36,894 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 22:04:36,894 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:36,894 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:36,895 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 22:04:36,895 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:36,895 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 22:04:36,896 - fhir_client - INFO - 已初始化 1 個FHIR伺服器連線
+2025-11-16 22:04:36,896 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:36,896 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 22:04:36,897 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:36,897 - fhir_client - INFO - 
+============================================================
+2025-11-16 22:04:36,897 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 22:04:36,897 - fhir_client - INFO - ============================================================
+2025-11-16 22:04:36,898 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 22:04:36,898 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 22:04:39,301 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 22:04:39,303 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 22:04:39,584 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 22:04:39,586 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 22:04:39,902 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 22:04:39,903 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 22:04:40,186 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 22:04:40,187 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 22:04:40,518 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 22:04:40,519 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 22:04:40,801 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 22:04:40,802 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 22:04:41,021 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 22:04:41,022 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 22:04:41,337 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 22:04:41,338 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 22:04:41,339 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:04:41,340 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:04:41,340 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:04:41,341 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:04:41,341 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:04:41,342 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:04:41,342 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 22:04:41,343 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:04:41,344 - fhir_client - INFO - 
+合併後總計 350 筆資源（已去重）
+2025-11-16 22:04:41,344 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:04:41,344 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:04:41,345 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:04:41,345 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:04:41,346 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:04:41,346 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:04:41,346 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:04:41,346 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:41,347 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 22:04:41,347 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:41,347 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 22:04:41,347 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 22:04:41,347 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 22:04:41,348 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 22:04:41,348 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 22:04:41,349 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 22:04:41,349 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 22:04:41,349 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 22:04:41,349 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 22:04:41,349 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 22:04:41,349 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 22:04:41,350 - cql_processor - INFO - 抗生素使用率計算完成: 24.0%
+2025-11-16 22:04:41,350 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 22:04:41,350 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 22:04:41,350 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 22:04:41,350 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 125.0 kg
+2025-11-16 22:04:41,350 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 22:04:41,350 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:41,351 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 22:04:41,351 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:41,351 - data_filter - INFO - 時間範圍: 2020-11-17 至 2025-11-16 (5年)
+2025-11-16 22:04:41,354 - data_filter - INFO - Encounter: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:41,355 - data_filter - INFO - MedicationRequest: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:41,356 - data_filter - INFO - MedicationAdministration: 50 -> 0 筆（已過濾）
+2025-11-16 22:04:41,356 - data_filter - INFO - Observation: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:41,357 - data_filter - INFO - Procedure: 50 -> 1 筆（已過濾）
+2025-11-16 22:04:41,358 - data_filter - INFO - DiagnosticReport: 50 -> 2 筆（已過濾）
+2025-11-16 22:04:41,360 - data_filter - INFO - 已提取 50 位病患的基本資料
+2025-11-16 22:04:41,360 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:41,361 - __main__ - INFO - 測試結果總覽
+2025-11-16 22:04:41,361 - __main__ - INFO - ================================================================================
+2025-11-16 22:04:41,381 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 22:04:41,382 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:04:41,382 - __main__ - INFO - 測試完成！
+2025-11-16 22:04:41,382 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:04,959 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 22:12:04,960 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:04,961 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 22:12:04,961 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:04,962 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:12:04,962 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 22:12:04,963 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:04,963 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 22:12:04,964 - fhir_client - INFO - 已初始化 1 個FHIR伺服器連線
+2025-11-16 22:12:04,964 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:12:04,965 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 22:12:04,965 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:04,965 - fhir_client - INFO - 
+============================================================
+2025-11-16 22:12:04,966 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 22:12:04,966 - fhir_client - INFO - ============================================================
+2025-11-16 22:12:04,966 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 22:12:04,967 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 22:12:07,589 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 22:12:07,590 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 22:12:07,897 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 22:12:07,899 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 22:12:08,210 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 22:12:08,211 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 22:12:08,490 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 22:12:08,491 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 22:12:08,769 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 22:12:08,769 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 22:12:09,073 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 22:12:09,073 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 22:12:09,306 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 22:12:09,307 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 22:12:09,611 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 22:12:09,612 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 22:12:09,612 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:12:09,612 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:12:09,612 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:12:09,613 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:12:09,613 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:12:09,613 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:12:09,613 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 22:12:09,613 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:12:09,613 - fhir_client - INFO - 
+合併後總計 350 筆資源（已去重）
+2025-11-16 22:12:09,614 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:12:09,614 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:12:09,614 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:12:09,614 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:12:09,614 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:12:09,615 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:12:09,615 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:12:09,615 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:12:09,615 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 22:12:09,615 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:09,616 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 22:12:09,616 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 22:12:09,616 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 22:12:09,618 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 22:12:09,618 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 22:12:09,619 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 22:12:09,619 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 22:12:09,620 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 22:12:09,620 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 22:12:09,620 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 22:12:09,620 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 22:12:09,620 - cql_processor - INFO - 抗生素使用率計算完成: 24.0%
+2025-11-16 22:12:09,620 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 22:12:09,621 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 22:12:09,621 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 22:12:09,621 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 125.0 kg
+2025-11-16 22:12:09,621 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 22:12:09,621 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:12:09,622 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 22:12:09,622 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:09,622 - data_filter - INFO - 時間範圍: 1027-07-17 至 2025-11-16 (999年)
+2025-11-16 22:12:09,632 - data_filter - INFO - 已提取 50 位病患的基本資料
+2025-11-16 22:12:09,632 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:12:09,633 - __main__ - INFO - 測試結果總覽
+2025-11-16 22:12:09,633 - __main__ - INFO - ================================================================================
+2025-11-16 22:12:09,696 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 22:12:09,697 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:12:09,697 - __main__ - INFO - 測試完成！
+2025-11-16 22:12:09,697 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:51,186 - __main__ - INFO - 已載入設定檔: config.yaml
+2025-11-16 22:28:51,187 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:51,187 - __main__ - INFO - ESG CQL 測試系統啟動
+2025-11-16 22:28:51,188 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:51,188 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:28:51,189 - __main__ - INFO - 步驟 1: 設定FHIR伺服器連線
+2025-11-16 22:28:51,189 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:51,189 - __main__ - INFO - ✓ SMART Health IT Sandbox: https://launch.smarthealthit.org/v/r4/fhir
+2025-11-16 22:28:51,190 - fhir_client - INFO - 已初始化 1 個FHIR伺服器連線
+2025-11-16 22:28:51,191 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:28:51,191 - __main__ - INFO - 步驟 2: 從SMART on FHIR伺服器擷取資料（範圍：全部）
+2025-11-16 22:28:51,192 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:51,192 - fhir_client - INFO - 
+============================================================
+2025-11-16 22:28:51,193 - fhir_client - INFO - 正在從 SMART Health IT Sandbox 擷取資料...
+2025-11-16 22:28:51,193 - fhir_client - INFO - ============================================================
+2025-11-16 22:28:51,193 - fhir_client - INFO - 開始從 SMART Health IT Sandbox 擷取所有CQL所需資源...
+2025-11-16 22:28:51,194 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Patient
+2025-11-16 22:28:53,672 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Patient 資料
+2025-11-16 22:28:53,673 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Encounter
+2025-11-16 22:28:53,957 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Encounter 資料
+2025-11-16 22:28:53,959 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationRequest
+2025-11-16 22:28:54,293 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationRequest 資料
+2025-11-16 22:28:54,294 - fhir_client - INFO - 請求 SMART Health IT Sandbox: MedicationAdministration
+2025-11-16 22:28:54,552 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 MedicationAdministration 資料
+2025-11-16 22:28:54,554 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Observation
+2025-11-16 22:28:54,821 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Observation 資料
+2025-11-16 22:28:54,822 - fhir_client - INFO - 請求 SMART Health IT Sandbox: Procedure
+2025-11-16 22:28:55,101 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 Procedure 資料
+2025-11-16 22:28:55,102 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DocumentReference
+2025-11-16 22:28:55,338 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DocumentReference 資料
+2025-11-16 22:28:55,339 - fhir_client - INFO - 請求 SMART Health IT Sandbox: DiagnosticReport
+2025-11-16 22:28:55,650 - fhir_client - INFO - 成功從 SMART Health IT Sandbox 取得 DiagnosticReport 資料
+2025-11-16 22:28:55,651 - fhir_client - INFO - 從 SMART Health IT Sandbox 共取得 350 筆資源
+2025-11-16 22:28:55,651 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:28:55,651 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:28:55,652 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:28:55,652 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:28:55,653 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:28:55,653 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:28:55,653 - fhir_client - INFO -   - DocumentReference: 0 筆
+2025-11-16 22:28:55,653 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:28:55,653 - fhir_client - INFO - 
+合併後總計 350 筆資源（已去重）
+2025-11-16 22:28:55,653 - fhir_client - INFO -   - Patient: 50 筆
+2025-11-16 22:28:55,653 - fhir_client - INFO -   - Encounter: 50 筆
+2025-11-16 22:28:55,654 - fhir_client - INFO -   - MedicationRequest: 50 筆
+2025-11-16 22:28:55,654 - fhir_client - INFO -   - MedicationAdministration: 50 筆
+2025-11-16 22:28:55,654 - fhir_client - INFO -   - Observation: 50 筆
+2025-11-16 22:28:55,654 - fhir_client - INFO -   - Procedure: 50 筆
+2025-11-16 22:28:55,654 - fhir_client - INFO -   - DiagnosticReport: 50 筆
+2025-11-16 22:28:55,654 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:28:55,654 - __main__ - INFO - 步驟 3: 執行CQL Libraries
+2025-11-16 22:28:55,655 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:55,655 - __main__ - INFO - ✓ Antibiotic_Utilization: Antibiotic_Utilization.cql
+2025-11-16 22:28:55,655 - __main__ - INFO - ✓ EHR_Adoption_Rate: EHR_Adoption_Rate.cql
+2025-11-16 22:28:55,655 - __main__ - INFO - ✓ Waste: Waste.cql
+2025-11-16 22:28:55,656 - cql_processor - INFO - 已載入CQL檔案: Antibiotic_Utilization.cql
+2025-11-16 22:28:55,656 - cql_processor - INFO - CQL Library: Antibiotic_Utilization v1.0.0
+2025-11-16 22:28:55,657 - cql_processor - INFO - 已載入CQL檔案: EHR_Adoption_Rate.cql
+2025-11-16 22:28:55,657 - cql_processor - INFO - CQL Library: EHR_Adoption_Rate v1.0.0
+2025-11-16 22:28:55,658 - cql_processor - INFO - 已載入CQL檔案: Waste.cql
+2025-11-16 22:28:55,658 - cql_processor - INFO - CQL Library: Waste v1.0.0
+2025-11-16 22:28:55,658 - cql_processor - INFO - 已初始化 3 個CQL處理器
+2025-11-16 22:28:55,658 - cql_processor - INFO - 開始執行CQL: Antibiotic_Utilization
+2025-11-16 22:28:55,658 - cql_processor - INFO - 抗生素使用率計算完成: 24.0%
+2025-11-16 22:28:55,659 - cql_processor - INFO - 開始執行CQL: EHR_Adoption_Rate
+2025-11-16 22:28:55,659 - cql_processor - INFO - EHR採用率計算完成: 0.0%
+2025-11-16 22:28:55,659 - cql_processor - INFO - 開始執行CQL: Waste
+2025-11-16 22:28:55,659 - cql_processor - INFO - 廢棄物管理計算完成: 總廢棄物 125.0 kg
+2025-11-16 22:28:55,659 - __main__ - INFO - 
+已執行 3 個CQL Library
+2025-11-16 22:28:55,660 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:28:55,660 - __main__ - INFO - 步驟 4: 資料過濾與顯示（VS Code控制）
+2025-11-16 22:28:55,660 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:55,660 - data_filter - INFO - 時間範圍: 1027-07-17 至 2025-11-16 (999年)
+2025-11-16 22:28:55,667 - data_filter - INFO - 已提取 50 位病患的基本資料
+2025-11-16 22:28:55,667 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:28:55,668 - __main__ - INFO - 測試結果總覽
+2025-11-16 22:28:55,668 - __main__ - INFO - ================================================================================
+2025-11-16 22:28:55,719 - __main__ - INFO - 結果已儲存至: C:\Users\tony1\OneDrive\桌面\ESG CQL 1116\esg_cql_results.json
+2025-11-16 22:28:55,719 - __main__ - INFO - 
+================================================================================
+2025-11-16 22:28:55,720 - __main__ - INFO - 測試完成！
+2025-11-16 22:28:55,720 - __main__ - INFO - ================================================================================

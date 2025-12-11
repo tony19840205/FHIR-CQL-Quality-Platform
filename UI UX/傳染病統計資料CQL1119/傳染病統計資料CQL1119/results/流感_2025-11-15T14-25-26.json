@@ -1,0 +1,39 @@
+{
+  "libraryName": "流感",
+  "timeRange": "過去 2 年",
+  "totalCount": 20,
+  "ageDistribution": {
+    "45-64歲": 8,
+    "18-44歲": 5,
+    "65歲以上": 7
+  },
+  "genderDistribution": {
+    "male": 6,
+    "female": 14,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 7,
+    "急診": 7,
+    "住院": 6,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "Influenza": 20
+  },
+  "residenceLocation": {
+    "Massachusetts, Boston": 4,
+    "New York, New York": 5,
+    "Texas, Houston": 5,
+    "California, Los Angeles": 5,
+    "Florida, Miami": 1
+  },
+  "serverBreakdown": [
+    {
+      "server": "Sample Data Server",
+      "status": "success",
+      "count": 20
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+﻿"Server","ServerURL","TestDate","IndicatorCode","IndicatorName","Numerator","Denominator","Rate","ExpectedNumerator","ExpectedDenominator","ExpectedRate","NumeratorMatch","DenominatorMatch","RateMatch","ValidationStatus"
+"SMART Health IT","https://launch.smarthealthit.org/v/r4/fhir","2025-11-08 20:02:58","1137.01","Patient Requested Cesarean Section Rate","24","300","8","24","300","8","True","True","True","PASS"
+"HAPI FHIR Test Server","https://hapi.fhir.org/baseR4","2025-11-08 20:03:00","1137.01","Patient Requested Cesarean Section Rate","24","300","8","24","300","8","True","True","True","PASS"
+"FHIR Sandbox","https://api.logicahealth.org/test/open","2025-11-08 20:03:01","1137.01","Patient Requested Cesarean Section Rate","ERROR","ERROR","ERROR","24","300","8","False","False","False","ERROR"
+"UHN HAPI FHIR","https://fhir.uhn.ca/baseR4","2025-11-08 20:03:01","1137.01","Patient Requested Cesarean Section Rate","ERROR","ERROR","ERROR","24","300","8","False","False","False","ERROR"

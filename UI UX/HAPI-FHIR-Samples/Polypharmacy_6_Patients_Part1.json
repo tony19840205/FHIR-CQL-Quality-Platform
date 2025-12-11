@@ -1,0 +1,70 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "poly-patient-001",
+        "active": true,
+        "identifier": [{"system": "http://www.cgmh.org.tw/patient-id", "value": "P001234567"}],
+        "name": [{"family": "王", "given": ["大明"]}],
+        "gender": "male",
+        "birthDate": "1955-03-10"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "poly-encounter-001",
+        "status": "finished",
+        "class": {"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "AMB", "display": "ambulatory"},
+        "subject": {"reference": "Patient/poly-patient-001"},
+        "period": {"start": "2025-10-05T09:00:00+08:00", "end": "2025-10-05T09:30:00+08:00"}
+      }
+    },
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-01", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0123456"}], "text": "降血壓藥1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-02", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0234567"}], "text": "降血糖藥1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-03", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0345678"}], "text": "降血脂藥1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-04", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0456789"}], "text": "胃藥1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-05", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0567890"}], "text": "止痛藥1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-06", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0678901"}], "text": "維生素B1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-07", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0789012"}], "text": "鈣片1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-08", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0890123"}], "text": "抗凝血藥1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-09", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A0901234"}], "text": "利尿劑1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-001-10", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "A1012345"}], "text": "安眠藥1"}, "subject": {"reference": "Patient/poly-patient-001"}, "encounter": {"reference": "Encounter/poly-encounter-001"}, "authoredOn": "2025-10-05", "dispenseRequest": {"quantity": {"value": 28}}}},
+
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "poly-patient-002",
+        "active": true,
+        "identifier": [{"system": "http://www.cgmh.org.tw/patient-id", "value": "P002345678"}],
+        "name": [{"family": "李", "given": ["小華"]}],
+        "gender": "female",
+        "birthDate": "1962-07-20"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "poly-encounter-002",
+        "status": "finished",
+        "class": {"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "AMB", "display": "ambulatory"},
+        "subject": {"reference": "Patient/poly-patient-002"},
+        "period": {"start": "2025-10-08T14:00:00+08:00", "end": "2025-10-08T14:30:00+08:00"}
+      }
+    },
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-01", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0123456"}], "text": "降血壓藥2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-02", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0234567"}], "text": "降血糖藥2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-03", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0345678"}], "text": "降血脂藥2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-04", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0456789"}], "text": "胃藥2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-05", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0567890"}], "text": "止痛藥2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-06", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0678901"}], "text": "維生素B2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-07", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0789012"}], "text": "鈣片2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-08", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0890123"}], "text": "抗凝血藥2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-09", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B0901234"}], "text": "利尿劑2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-10", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B1012345"}], "text": "安眠藥2"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}},
+    {"resource": {"resourceType": "MedicationRequest", "id": "poly-med-002-11", "status": "completed", "intent": "order", "medicationCodeableConcept": {"coding": [{"system": "http://www.nhi.gov.tw/drugs", "code": "B1123456"}], "text": "肌肉鬆弛劑"}, "subject": {"reference": "Patient/poly-patient-002"}, "encounter": {"reference": "Encounter/poly-encounter-002"}, "authoredOn": "2025-10-08", "dispenseRequest": {"quantity": {"value": 30}}}}
+  ]
+}

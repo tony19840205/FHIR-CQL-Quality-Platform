@@ -1,0 +1,53 @@
+{
+  "total_patients": 900,
+  "total_encounters": 1843,
+  "total_conditions": 1843,
+  "total_observations": 5575,
+  "total_immunizations": 2164,
+  "total_resources": 12325,
+  "disease_distribution": {
+    "covid19": {
+      "total": 379,
+      "severity": {
+        "6736007": 115,
+        "255604002": 230,
+        "24484000": 34
+      }
+    },
+    "influenza": {
+      "total": 368,
+      "severity": {
+        "255604002": 260,
+        "6736007": 93,
+        "24484000": 15
+      }
+    },
+    "conjunctivitis": {
+      "total": 389,
+      "severity": {
+        "255604002": 322,
+        "6736007": 67
+      }
+    },
+    "enterovirus": {
+      "total": 397,
+      "severity": {
+        "24484000": 15,
+        "255604002": 291,
+        "6736007": 91
+      }
+    },
+    "diarrhea": {
+      "total": 310,
+      "severity": {
+        "255604002": 202,
+        "6736007": 89,
+        "24484000": 19
+      }
+    }
+  },
+  "vaccine_distribution": {
+    "covid19": 1700,
+    "influenza": 464
+  }
+}

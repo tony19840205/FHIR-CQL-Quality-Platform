@@ -1,0 +1,27 @@
+{
+  "libraryName": "腹瀉",
+  "timeRange": "過去 2 年",
+  "totalCount": 0,
+  "ageDistribution": {},
+  "genderDistribution": {
+    "male": 0,
+    "female": 0,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 0,
+    "急診": 0,
+    "住院": 0,
+    "其他": 0
+  },
+  "virusTypeDistribution": {},
+  "residenceLocation": {},
+  "serverBreakdown": [
+    {
+      "server": "Sample Data Server",
+      "status": "success",
+      "count": 0
+    }
+  ]
+}

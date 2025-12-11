@@ -1,0 +1,465 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "TW00400",
+        "identifier": [
+          {
+            "system": "https://www.nhi.gov.tw/",
+            "value": "TW00400"
+          }
+        ],
+        "name": [
+          {
+            "text": "糖尿病測試患者400",
+            "family": "Test400"
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1970-01-01"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient/TW00400"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "TW00400-dm-test",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB",
+          "display": "門診"
+        },
+        "subject": {
+          "reference": "Patient/TW00400"
+        },
+        "period": {
+          "start": "2025-11-15T10:00:00",
+          "end": "2025-11-15T11:00:00"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Encounter/TW00400-dm-test"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "TW00400-dm-diag",
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "E11.9",
+              "display": "Type 2 diabetes mellitus without complications"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00400"
+        },
+        "encounter": {
+          "reference": "Encounter/TW00400-dm-test"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Condition/TW00400-dm-diag"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "TW00400-metformin",
+        "status": "completed",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://www.nhi.gov.tw/medication",
+              "code": "AC456781AA",
+              "display": "Metformin"
+            },
+            {
+              "system": "http://www.whocc.no/atc",
+              "code": "A10BA02",
+              "display": "Metformin"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00400"
+        },
+        "encounter": {
+          "reference": "Encounter/TW00400-dm-test"
+        },
+        "authoredOn": "2025-11-15T10:30:00"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/TW00400-metformin"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "TW00400-hba1c",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "laboratory"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "4548-4",
+              "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00400"
+        },
+        "effectiveDateTime": "2025-11-15T09:00:00",
+        "valueQuantity": {
+          "value": 7.5,
+          "unit": "%",
+          "system": "http://unitsofmeasure.org",
+          "code": "%"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Observation/TW00400-hba1c"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "TW00401",
+        "identifier": [
+          {
+            "system": "https://www.nhi.gov.tw/",
+            "value": "TW00401"
+          }
+        ],
+        "name": [
+          {
+            "text": "糖尿病測試患者401",
+            "family": "Test401"
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1970-01-01"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient/TW00401"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "TW00401-dm-test",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB",
+          "display": "門診"
+        },
+        "subject": {
+          "reference": "Patient/TW00401"
+        },
+        "period": {
+          "start": "2025-11-15T10:00:00",
+          "end": "2025-11-15T11:00:00"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Encounter/TW00401-dm-test"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "TW00401-dm-diag",
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "E11.9",
+              "display": "Type 2 diabetes mellitus without complications"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00401"
+        },
+        "encounter": {
+          "reference": "Encounter/TW00401-dm-test"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Condition/TW00401-dm-diag"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "TW00401-metformin",
+        "status": "completed",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://www.nhi.gov.tw/medication",
+              "code": "AC456781AA",
+              "display": "Metformin"
+            },
+            {
+              "system": "http://www.whocc.no/atc",
+              "code": "A10BA02",
+              "display": "Metformin"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00401"
+        },
+        "encounter": {
+          "reference": "Encounter/TW00401-dm-test"
+        },
+        "authoredOn": "2025-11-15T10:30:00"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/TW00401-metformin"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "TW00401-hba1c",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "laboratory"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "4548-4",
+              "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00401"
+        },
+        "effectiveDateTime": "2025-11-15T09:00:00",
+        "valueQuantity": {
+          "value": 7.5,
+          "unit": "%",
+          "system": "http://unitsofmeasure.org",
+          "code": "%"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Observation/TW00401-hba1c"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "TW00402",
+        "identifier": [
+          {
+            "system": "https://www.nhi.gov.tw/",
+            "value": "TW00402"
+          }
+        ],
+        "name": [
+          {
+            "text": "糖尿病測試患者402",
+            "family": "Test402"
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1970-01-01"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient/TW00402"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "TW00402-dm-test",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB",
+          "display": "門診"
+        },
+        "subject": {
+          "reference": "Patient/TW00402"
+        },
+        "period": {
+          "start": "2025-11-15T10:00:00",
+          "end": "2025-11-15T11:00:00"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Encounter/TW00402-dm-test"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "TW00402-dm-diag",
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "E11.9",
+              "display": "Type 2 diabetes mellitus without complications"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00402"
+        },
+        "encounter": {
+          "reference": "Encounter/TW00402-dm-test"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Condition/TW00402-dm-diag"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "TW00402-metformin",
+        "status": "completed",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "https://www.nhi.gov.tw/medication",
+              "code": "AC456781AA",
+              "display": "Metformin"
+            },
+            {
+              "system": "http://www.whocc.no/atc",
+              "code": "A10BA02",
+              "display": "Metformin"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00402"
+        },
+        "encounter": {
+          "reference": "Encounter/TW00402-dm-test"
+        },
+        "authoredOn": "2025-11-15T10:30:00"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/TW00402-metformin"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "TW00402-hba1c",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "laboratory"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "4548-4",
+              "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/TW00402"
+        },
+        "effectiveDateTime": "2025-11-15T09:00:00",
+        "valueQuantity": {
+          "value": 7.5,
+          "unit": "%",
+          "system": "http://unitsofmeasure.org",
+          "code": "%"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Observation/TW00402-hba1c"
+      }
+    }
+  ]
+}

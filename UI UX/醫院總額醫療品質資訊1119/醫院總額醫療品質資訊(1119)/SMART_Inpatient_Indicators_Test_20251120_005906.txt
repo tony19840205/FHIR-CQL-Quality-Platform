@@ -1,0 +1,215 @@
+﻿========================================
+SMART on FHIR INPATIENT INDICATORS TEST
+========================================
+Generated: 2025-11-20 00:59:06
+FHIR Server: https://hapi.fhir.org/baseR4
+Test Period: 2024-01-01 to 2025-11-20
+Total Indicators: 10
+
+========================================
+TEST SUMMARY
+========================================
+Total Tests: 10
+Passed: 9
+Failed: 1
+Success Rate: 90%
+
+========================================
+DETAILED TEST RESULTS
+========================================
+[1] 11-4 Cesarean First Time (Code: 1075.01)
+  Status: ??PASSED
+  Resource: Procedure
+
+[2] 12 Clean Surgery Antibiotic (Code: 1155)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: J01
+
+[3] 13 ESWL Utilization (Code: 20.01Q/1804Y)
+  Status: ??PASSED
+  Resource: Procedure
+
+[4] 14 Uterine Fibroid Readmission (Code: 473.01)
+  Status: ??PASSED
+  Resource: Condition
+  Total Records: 1
+  Fibroid Cases: 1
+  ICD-10 Code: D25
+
+[5] 15-1 Knee Arthroplasty Infection (Code: 353.01)
+  Status: ??PASSED
+  Resource: Procedure
+
+[6] 15-2 Total TKA Infection (Code: 3249)
+  Status: ??PASSED
+  Resource: Procedure
+  SNOMED Code: 609588000
+
+[7] 15-3 Partial TKA Infection (Code: 3250)
+  Status: ??PASSED
+  Resource: Procedure
+
+[8] 16
+  Status: ??FAILED
+  Error: 遠端伺服器傳回一個錯誤: (400) 不正確的要求。
+
+[9] 17 AMI Mortality (Code: 1662Q/1668Y)
+  Status: ??PASSED
+  Resource: Condition
+  Total Records: 9
+  ICD-10 Code: I21/I22
+  AMI Cases: 9
+
+[10] 18 Dementia Hospice (Code: 2795Q/2796Y)
+  Status: ??PASSED
+  Resource: Condition
+  Total Records: 2
+  ICD-10 Code: F01-F03/G30
+  Dementia Cases: 2
+
+========================================
+INDICATOR CATEGORIES
+========================================
+
+Surgical Quality Indicators:
+- 11-4: Cesarean section rate (first time with indication)
+- 12: Clean surgery antibiotic use >3 days
+- 13: ESWL average utilization times
+- 14: Uterine fibroid surgery 14-day readmission
+- 16: Inpatient surgical wound infection rate
+- 19: Clean surgery wound infection rate
+
+Joint Replacement Infection Indicators:
+- 15-1: Knee arthroplasty 90-day deep infection (all)
+- 15-2: Total knee arthroplasty 90-day deep infection
+- 15-3: Partial knee arthroplasty 90-day deep infection
+
+Clinical Outcome Indicators:
+- 17: Acute myocardial infarction mortality rate
+- 18: Dementia hospice care utilization rate
+
+========================================
+ICD-10 CODES TESTED
+========================================
+
+Procedures (ICD-10-PCS):
+- Cesarean delivery: 10D00Z0-10D00Z2
+- Knee arthroplasty: 0SRC0JZ, 0SRD0JZ
+- Clean surgery: Various tissue repair codes
+
+Diagnoses (ICD-10-CM):
+- D25: Uterine leiomyoma (fibroids)
+- I21/I22: Acute myocardial infarction
+- F01-F03: Dementia
+- G30: Alzheimer disease
+- T84.84: Prosthetic joint infection
+
+Medications (ATC):
+- J01: Systemic antibiotics
+
+========================================
+FHIR RESOURCES TESTED
+========================================
+
+1. Procedure - Surgical procedures (cesarean, TKA, ESWL)
+2. Condition - Diagnoses (fibroids, AMI, dementia, infections)
+3. MedicationRequest - Antibiotic prescriptions
+4. Encounter - Inpatient admissions and readmissions
+5. Patient - Demographics and mortality status
+
+========================================
+CLINICAL CONTEXT
+========================================
+
+Cesarean Section Indicators:
+- First-time cesarean with medical indication
+- Excludes previous cesarean history (O342)
+- DRG codes: 370, 371, 513
+
+Antibiotic Stewardship:
+- Clean surgery: Low infection risk
+- Target: Antibiotic use ?? days post-op
+- ATC J01: Systemic antibacterials
+
+Joint Replacement Complications:
+- 90-day surveillance period
+- Deep infection: T84.84, T84.50
+- Excludes same-day removal procedures
+
+Readmission Quality:
+- 14-day readmission window
+- Related diagnosis required
+- Excludes planned procedures
+
+Mortality Indicators:
+- AMI: Age ??8 years
+- Death within hospitalization or 30-day follow-up
+- Transfer codes: 4 (death), A (critical self-discharge)
+
+End-of-Life Care:
+- Dementia: F01-F03, G30 series
+- Hospice services: NHI codes 05601K-05374C
+- Home hospice and shared care
+
+========================================
+DATA QUALITY NOTES
+========================================
+
+Test Server Limitations:
+1. Limited surgical procedure coding
+2. Incomplete ICD-10-CM/PCS mappings
+3. No mortality status in test data
+4. Missing readmission linkages
+5. Limited hospice service codes
+
+For Production Use:
+1. Verify all ICD-10-PCS procedure codes
+2. Ensure complete diagnosis code mappings
+3. Link Patient mortality from vital statistics
+4. Implement 14/30/90-day tracking windows
+5. Map NHI procedure codes to FHIR
+6. Validate DRG grouper integration
+
+========================================
+QUALITY METRICS FORMULAS
+========================================
+
+Cesarean Rate = (Cesarean Deliveries / Total Deliveries) ? 100
+
+Clean Surgery Antibiotic >3 Days = 
+  (Antibiotic Use >3 Days / Clean Surgeries) ? 100
+
+ESWL Average = Total ESWL Procedures / Unique Patients
+
+14-Day Readmission Rate = 
+  (Readmissions ??4 Days / Index Discharges) ? 100
+
+90-Day Infection Rate = 
+  (Deep Infections ??0 Days / Joint Replacements) ? 100
+
+AMI Mortality Rate = (AMI Deaths / AMI Admissions) ? 100
+
+Hospice Utilization = 
+  (Dementia with Hospice / All Dementia Patients) ? 100
+
+========================================
+NEXT STEPS
+========================================
+
+1. Connect Hospital Server: Replace with production FHIR endpoint
+2. ICD-10 Mapping: Complete all surgical and diagnosis codes
+3. Temporal Tracking: Implement readmission/infection windows
+4. Mortality Data: Link to vital statistics registry
+5. DRG Integration: Connect to TW-DRG grouper
+6. NHI Codes: Map all Taiwan NHI procedure codes
+7. Quality Reports: Generate quarterly quality metrics
+8. Benchmarking: Compare against national averages
+
+========================================
+REPORT END
+========================================
+Generated: 2025-11-20 00:59:28
+FHIR Server: https://hapi.fhir.org/baseR4
+Test Status: 9/10 PASSED

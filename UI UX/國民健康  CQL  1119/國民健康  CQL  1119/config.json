@@ -1,0 +1,40 @@
+﻿{
+  "fhir_servers": [
+    {
+      "name": "SMART Server 1",
+      "base_url": "https://launch.smarthealthit.org/v/r4/fhir",
+      "description": "SMART Health IT R4 Test Server",
+      "enabled": true
+    },
+    {
+      "name": "SMART Server 2",
+      "base_url": "https://r4.smarthealthit.org",
+      "description": "SMART Health IT R4 Production Server",
+      "enabled": true
+    },
+    {
+      "name": "HAPI FHIR Public Server",
+      "base_url": "https://hapi.fhir.org/baseR4",
+      "description": "HAPI FHIR R4 Public Test Server",
+      "enabled": false,
+      "note": "Can enable for testing, may not have COVID-19 data"
+    }
+  ],
+  "filters": {
+    "time_period_years": 1,
+    "max_records_per_resource": 0,
+    "max_records_note": "0 = unlimited (no limit), or set specific number (e.g., 1000, 2000, 5000)",
+    "display_fields": [
+      "total_count",
+      "age",
+      "gender",
+      "vaccine_type",
+      "patient_location"
+    ]
+  },
+  "cql_libraries": [
+    "COVID19VaccinationCoverage.cql",
+    "HypertensionActiveCases.cql",
+    "InfluenzaVaccinationCoverage.cql"
+  ]
+}

@@ -1,0 +1,4 @@
+﻿"Quarter","TotalPatients","TotalPrescriptions","TotalDrugDays","OverlapDays","OverlapRate","CrossHospitalOverlapPatients","CrossHospitalOverlapPairs"
+"113 Q3","10","27","1518","747","49.21","8","19"
+"113 Q4","10","29","1704","765","44.89","8","19"
+"113 Annual","10","56","3222","1691","52.48","10","47"

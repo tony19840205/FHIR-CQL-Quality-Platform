@@ -1,0 +1,189 @@
+﻿========================================
+SMART on FHIR COMPREHENSIVE TEST
+========================================
+Generated: 2025-11-20 00:54:44
+FHIR Server: https://hapi.fhir.org/baseR4
+Test Period: 2024-01-01 to 2025-11-20
+Total Indicators: 12
+
+========================================
+TEST SUMMARY
+========================================
+Total Tests: 12
+Passed: 12
+Failed: 0
+Success Rate: 100%
+
+========================================
+DETAILED TEST RESULTS
+========================================
+[1] 03-2 Lipid-Lowering (Code: 1711)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: C10
+
+[2] 03-3 Antidiabetic (Code: 1712)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: A10
+
+[3] 03-4 Antipsychotic (Code: 1726)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: N05A
+
+[4] 03-5 Antidepressant (Code: 1727)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: N06A
+
+[5] 03-6 Sedative (Code: 1728)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: N05C
+
+[6] 03-7 Antithrombotic (Code: 3375)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: B01
+
+[7] 03-13 Cross-Hospital Antidepressant (Code: 1730)
+  Status: ??PASSED
+  Resource: MedicationRequest+Patient+Organization
+  Total Records: 91
+  ATC Code: N06A
+  Unique Patients: 4
+
+[8] 03-14 Cross-Hospital Sedative (Code: 1731)
+  Status: ??PASSED
+  Resource: Encounter
+  Ambulatory Encounters: 100
+
+[9] 03-15 Cross-Hospital Antithrombotic (Code: 3377)
+  Status: ??PASSED
+  Resource: Medication
+  ATC Code: B01
+  With ATC Codes: 25
+
+[10] 03-16 Cross-Hospital Prostate (Code: 3378)
+  Status: ??PASSED
+  Resource: MedicationRequest
+  Total Records: 91
+  ATC Code: G04C
+
+[11] 04 Chronic Prescription (Code: 1318)
+  Status: ??PASSED
+  Resource: Encounter
+  Finished Status: 93
+
+[12] 07 Diabetes HbA1c (Code: 109.01Q/110.01Y)
+  Status: ??PASSED
+  Resource: Observation
+
+========================================
+ATC CODE SUMMARY
+========================================
+
+Drug Classification Codes Tested:
+- C10: Lipid modifying agents (Statins, Fibrates)
+- A10: Drugs used in diabetes (Insulin, Metformin)
+- N05A: Antipsychotics (Risperidone, Olanzapine)
+- N06A: Antidepressants (SSRIs, SNRIs)
+- N05C: Hypnotics and sedatives (Benzodiazepines)
+- B01: Antithrombotic agents (Anticoagulants, Antiplatelets)
+- G04C: Drugs used in benign prostatic hypertrophy
+
+========================================
+FHIR RESOURCES TESTED
+========================================
+
+1. MedicationRequest - Prescription records
+2. Medication - Drug master data with ATC codes
+3. Encounter - Visit records (ambulatory)
+4. Patient - Patient demographics
+5. Organization - Healthcare providers
+6. Observation - Lab results (HbA1c, glucose)
+
+========================================
+INDICATOR CATEGORIES
+========================================
+
+Drug Overlap Indicators (Same Hospital):
+- 03-2: Lipid-lowering drugs
+- 03-3: Antidiabetic drugs
+- 03-4: Antipsychotic drugs
+- 03-5: Antidepressant drugs
+- 03-6: Sedative drugs
+- 03-7: Antithrombotic drugs
+
+Drug Overlap Indicators (Cross Hospital):
+- 03-13: Antidepressant drugs
+- 03-14: Sedative drugs
+- 03-15: Antithrombotic drugs
+- 03-16: Prostate drugs
+
+Prescription Quality Indicators:
+- 04: Chronic continuous prescription rate
+- 07: Diabetes HbA1c testing rate
+
+========================================
+DATA QUALITY NOTES
+========================================
+
+Test Server Limitations:
+1. Limited ATC code coverage in test data
+2. Patient linkage across encounters may be incomplete
+3. Organization assignments may not reflect real hospital structure
+4. Medication dates may not represent actual clinical patterns
+
+For Production Use:
+1. Connect to hospital FHIR server with real patient data
+2. Ensure complete ATC code mappings in medication master
+3. Verify patient identifiers (MRN) for cross-encounter linkage
+4. Validate organization IDs for hospital assignments
+5. Check temporal patterns for overlap calculations
+
+========================================
+OVERLAP CALCULATION METHODOLOGY
+========================================
+
+For Drug Overlap Indicators:
+- Same Hospital: Prescriptions from same organization
+- Cross Hospital: Prescriptions from different organizations
+- Same Patient: Matched by patient identifier
+- Overlapping Dates: Medication start/end dates intersect
+- Allow zero-day early refill
+
+Formula:
+Overlap Rate (%) = (Sum of Overlapping Days / Total Medication Days) ? 100
+
+Example:
+- Prescription A: 2024-01-01 to 2024-01-30 (Hospital A)
+- Prescription B: 2024-01-15 to 2024-02-14 (Hospital B)
+- Overlap: 16 days (2024-01-15 to 2024-01-30)
+- This counts as cross-hospital overlap
+
+========================================
+NEXT STEPS
+========================================
+
+1. Validate Results: Review test results for data completeness
+2. Connect Real Server: Replace with hospital FHIR endpoint
+3. Implement Overlap Logic: Add date range intersection calculations
+4. Patient Matching: Ensure proper MRN/identifier resolution
+5. Organization Mapping: Map FHIR Organization IDs to hospital codes
+6. Quarterly Reports: Generate automated quarterly statistics
+7. Quality Monitoring: Set up alerts for abnormal overlap rates
+
+========================================
+REPORT END
+========================================
+Generated: 2025-11-20 00:55:37
+FHIR Server: https://hapi.fhir.org/baseR4
+Test Status: 12/12 PASSED

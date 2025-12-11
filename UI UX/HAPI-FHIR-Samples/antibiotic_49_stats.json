@@ -1,0 +1,12 @@
+{
+  "patients": 49,
+  "encounters": 49,
+  "medication_requests": 49,
+  "medication_administrations": 94,
+  "inpatient": 20,
+  "outpatient": 29,
+  "access": 30,
+  "watch": 16,
+  "reserve": 3,
+  "total_bed_days": 166
+}

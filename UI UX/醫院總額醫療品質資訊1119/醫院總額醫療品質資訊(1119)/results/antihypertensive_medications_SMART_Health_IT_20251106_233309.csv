@@ -1,0 +1,10 @@
+﻿server,hospital_id,patient_id,claim_id,prescription_date,start_date,end_date,drug_days,drug_name,atc_code,quarter
+SMART_Health_IT,8b85559d-27de-4d4b-bea7-5a715164cb60,2cda5aad-e409-4070-9a15-e1c35c46ed5a,83b6c511-8b78-4fe2-b484-346ddee61933,2011-05-27,2011-05-27,2011-06-25,30,Hydrochlorothiazide 25 MG,C03AA03,2011Q2
+SMART_Health_IT,89af50db-f85c-497f-aa1f-f1c5cea70bc7,e7de504a-311d-49be-b2bc-566a328bcc72,155b0c34-9dc8-4dd3-8a87-fc31a0f3e573,1992-08-10,1992-08-10,1992-09-08,30,24 HR metoprolol succinate 100 MG Extended Release Oral Tablet [Toprol],C07AB02,1992Q3
+SMART_Health_IT,e92c468f-8f1b-4d5e-bf96-76dc945d2e8c,7d92e3ac-4bb6-4c7a-953a-ec8bb3b2da56,c3d33318-5e72-48e0-8449-84a1724dc2f5,2016-02-24,2016-02-24,2016-03-24,30,24 HR metoprolol succinate 100 MG Extended Release Oral Tablet [Toprol],C07AB02,2016Q1
+SMART_Health_IT,a6ba35b7-22d7-4bea-b87b-afbc9ff2f2ee,80a75b5a-fd30-4f38-895d-d8098fe7206e,9e8a9f3a-15bd-46aa-8919-16218ad10d53,2019-05-02,2019-05-02,2019-05-31,30,Hydrochlorothiazide 25 MG,C03AA03,2019Q2
+SMART_Health_IT,ec06fc71-7541-44d0-80cf-6b0eec00ab3b,068973f7-ee9f-48ef-b4ec-fb6092b14302,0a0db2d7-0a92-496d-84cc-f40f6316ad89,2006-01-20,2006-01-20,2006-02-18,30,24 HR metoprolol succinate 100 MG Extended Release Oral Tablet [Toprol],C07AB02,2006Q1
+SMART_Health_IT,63003abb-3924-46df-a75a-0a1f42733189,3552e945-2598-4993-b617-4133ab2ed914,5fc2fd1a-08dc-4674-ab2c-5075ff20759b,2004-06-11,2004-06-11,2004-07-10,30,Hydrochlorothiazide 25 MG,C03AA03,2004Q2
+SMART_Health_IT,e78eb359-e003-4912-bb67-0db9ae8e3ef5,dbf9798e-4b52-4cd9-a9eb-ec36149c859a,80b7705c-f4da-4669-8959-4ccc53719088,2011-05-30,2011-05-30,2011-06-28,30,Hydrochlorothiazide 25 MG,C03AA03,2011Q2
+SMART_Health_IT,0653c047-19b4-466e-a048-0b3917600b43,a9fb0d0f-fb3c-4173-ad19-ec9ba84f4d02,5a30886e-30e2-4164-be29-91cc6f32e4c4,1962-07-11,1962-07-11,1962-08-09,30,Hydrochlorothiazide 25 MG,C03AA03,1962Q3
+SMART_Health_IT,21deb55c-2cda-4306-947d-001412452463,39234650-0229-4aee-975b-c8ee68bab40b,0d8f6007-b49b-4d07-bec7-f7c277b181cd,2012-12-29,2012-12-29,2013-01-27,30,Amlodipine 5 MG Oral Tablet,C08CA01,2012Q4

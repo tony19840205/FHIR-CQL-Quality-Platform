@@ -1,0 +1,49 @@
+{
+  "libraryName": "流感",
+  "timeRange": "過去 2 年",
+  "totalCount": 8,
+  "ageDistribution": {
+    "45-64歲": 8
+  },
+  "genderDistribution": {
+    "male": 3,
+    "female": 5,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 5,
+    "急診": 0,
+    "住院": 3,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "Influenza": 8
+  },
+  "residenceLocation": {
+    "Texas, Houston": 5,
+    "Illinois, Chicago": 3
+  },
+  "serverBreakdown": [
+    {
+      "server": "SMART Server 1",
+      "status": "success",
+      "count": 0
+    },
+    {
+      "server": "SMART Server 2",
+      "status": "success",
+      "count": 0
+    },
+    {
+      "server": "HAPI FHIR Public Test Server",
+      "status": "success",
+      "count": 8
+    },
+    {
+      "server": "Synthea Sample Data Server",
+      "status": "success",
+      "count": 0
+    }
+  ]
+}

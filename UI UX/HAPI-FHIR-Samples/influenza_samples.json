@@ -1,0 +1,250 @@
+{
+  "downloaded_at": "2025-12-01T13:45:15.043795",
+  "disease_type": "influenza",
+  "total_conditions": 3,
+  "total_patients": 3,
+  "conditions": [
+    {
+      "resourceType": "Condition",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "52960801",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2025-11-19T19:21:07.367+00:00",
+          "source": "#oCiSeIQSxZs2JMaF"
+        },
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "verificationStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+              "code": "confirmed"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "J11.1",
+              "display": "Influenza con manifestación respiratoria, virus no identificado"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/52960799"
+        },
+        "recordedDate": "2025-11-19"
+      }
+    },
+    {
+      "resourceType": "Condition",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "52960804",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2025-11-19T19:21:43.972+00:00",
+          "source": "#K1zTKc0i4N1x8tx9"
+        },
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "verificationStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+              "code": "confirmed"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "J11.1",
+              "display": "Influenza con manifestación respiratoria, virus no identificado"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/52960802"
+        },
+        "recordedDate": "2025-11-19"
+      }
+    },
+    {
+      "resourceType": "Condition",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "52960807",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2025-11-19T19:24:30.668+00:00",
+          "source": "#1XeXimrZB0yk3yry"
+        },
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "verificationStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+              "code": "confirmed"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "J11.1",
+              "display": "Influenza con manifestación respiratoria, virus no identificado"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/52960805"
+        },
+        "recordedDate": "2025-11-19"
+      }
+    }
+  ],
+  "patients": [
+    {
+      "resourceType": "Patient",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "52960805",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2025-11-19T19:24:28.673+00:00",
+          "source": "#x70VH1mapqLJbiMG"
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Paloma <b>MENENDEZ </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>44809066</td></tr><tr><td>Date of birth</td><td><span>20 October 1995</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "https://renaper.gob.ar/dni",
+            "value": "44809066"
+          }
+        ],
+        "name": [
+          {
+            "family": "Menendez",
+            "given": [
+              "Paloma"
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "1133334444",
+            "use": "mobile"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1995-10-20"
+      }
+    },
+    {
+      "resourceType": "Patient",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "52960802",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2025-11-19T19:21:41.972+00:00",
+          "source": "#knY0u0TKSqqxTd1a"
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Paloma <b>MENENDEZ </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>44809066</td></tr><tr><td>Date of birth</td><td><span>20 October 1995</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "https://renaper.gob.ar/dni",
+            "value": "44809066"
+          }
+        ],
+        "name": [
+          {
+            "family": "Menendez",
+            "given": [
+              "Paloma"
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "1133334444",
+            "use": "mobile"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1995-10-20"
+      }
+    },
+    {
+      "resourceType": "Patient",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "52960799",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2025-11-19T19:21:05.367+00:00",
+          "source": "#4MB6i9HVZ0Z6MWXK"
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Paloma <b>MENENDEZ </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>44809066</td></tr><tr><td>Date of birth</td><td><span>20 October 1995</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "https://renaper.gob.ar/dni",
+            "value": "44809066"
+          }
+        ],
+        "name": [
+          {
+            "family": "Menendez",
+            "given": [
+              "Paloma"
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "1133334444",
+            "use": "mobile"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1995-10-20"
+      }
+    }
+  ]
+}

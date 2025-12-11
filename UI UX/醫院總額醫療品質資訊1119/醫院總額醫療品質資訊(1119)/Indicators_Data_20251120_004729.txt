@@ -1,0 +1,168 @@
+﻿========================================
+HOSPITAL QUALITY INDICATORS DATA REPORT
+========================================
+Generated: 2025-11-20 00:47:29
+Data Period: 2024-01-01 to 2025-11-20
+FHIR Server: https://hapi.fhir.org/baseR4
+
+========================================
+INDICATOR 01: OUTPATIENT INJECTION USAGE RATE (3127)
+========================================
+
+Definition:
+  Numerator: Number of injection drug cases (drug code 10 digits, 8th digit = '2')
+  Denominator: Total drug dispensing cases
+  Baseline: 0.94% (2022Q1: 54,653 / 5,831,409)
+
+Quarterly Data:
+----------------------------------------
+Quarter: 2024Q1 (2024-01-01 to 2024-03-31)
+  Injection Cases: 0
+  Total Cases: 0
+  Usage Rate: 0%
+
+Quarter: 2024Q2 (2024-04-01 to 2024-06-30)
+  Injection Cases: 0
+  Total Cases: 0
+  Usage Rate: 0%
+
+Quarter: 2024Q3 (2024-07-01 to 2024-09-30)
+  Injection Cases: 0
+  Total Cases: 1
+  Usage Rate: 0%
+
+Quarter: 2024Q4 (2024-10-01 to 2024-12-31)
+  Injection Cases: 0
+  Total Cases: 77
+  Usage Rate: 0%
+
+Quarter: 2025Q1 (2025-01-01 to 2025-03-31)
+  Injection Cases: 0
+  Total Cases: 13
+  Usage Rate: 0%
+
+Quarter: 2025Q2 (2025-04-01 to 2025-06-30)
+  Injection Cases: 0
+  Total Cases: 0
+  Usage Rate: 0%
+
+Quarter: 2025Q3 (2025-07-01 to 2025-09-30)
+  Injection Cases: 0
+  Total Cases: 0
+  Usage Rate: 0%
+
+Quarter: 2025Q4 (2025-10-01 to 2025-11-20)
+  Injection Cases: 0
+  Total Cases: 0
+  Usage Rate: 0%
+
+Summary for Indicator 01:
+----------------------------------------
+Total Injection Cases: 0
+Total Medication Cases: 91
+Average Usage Rate: 0%
+vs Baseline (0.94%): -0.94%
+Assessment: GOOD - Below baseline
+
+========================================
+INDICATOR 02: OUTPATIENT ANTIBIOTIC USAGE RATE (1140.01)
+========================================
+
+Definition:
+  Numerator: Number of antibiotic prescription cases (ATC code J01*)
+  Denominator: Total outpatient cases
+  ATC Code: J01 (Systemic antibiotics)
+
+Quarterly Data:
+----------------------------------------
+Quarter: 2024Q1 (2024-01-01 to 2024-03-31)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Quarter: 2024Q2 (2024-04-01 to 2024-06-30)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Quarter: 2024Q3 (2024-07-01 to 2024-09-30)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Quarter: 2024Q4 (2024-10-01 to 2024-12-31)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Quarter: 2025Q1 (2025-01-01 to 2025-03-31)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Quarter: 2025Q2 (2025-04-01 to 2025-06-30)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Quarter: 2025Q3 (2025-07-01 to 2025-09-30)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Quarter: 2025Q4 (2025-10-01 to 2025-11-20)
+  Antibiotic Cases: 0
+  Total Encounters: 100
+  Usage Rate: 0%
+
+Summary for Indicator 02:
+----------------------------------------
+Total Antibiotic Cases: 0
+Total Encounters: 800
+Average Usage Rate: 0%
+
+========================================
+COMPARISON TABLE
+========================================
+
+Indicator 01 vs Indicator 02:
+
+| Metric                    | Indicator 01 | Indicator 02 |
+|---------------------------|--------------|--------------|
+| Total Target Cases        | 0      | 0      |
+| Total Base Cases          | 91      | 800      |
+| Average Usage Rate        | 0%        | 0%        |
+| Baseline Comparison       | -0.94%       | N/A          |
+
+
+========================================
+DATA SOURCE INFORMATION
+========================================
+
+FHIR Resources Used:
+- MedicationRequest: Prescription records
+- Encounter: Visit records
+- Medication: Drug master data
+
+Filter Criteria:
+- Indicator 01: Route of administration contains injection codes
+- Indicator 02: Medication code ATC = J01* (antibiotics)
+
+SNOMED CT Codes:
+- 385219001: Injection
+- 385221006: Ampoule
+- 415818006: Vial
+
+ATC Codes:
+- J01: Systemic antibiotics
+
+Data Quality Notes:
+- Data from public FHIR test server (HAPI FHIR)
+- Actual clinical data may differ
+- Recommend connecting to hospital FHIR server for real data
+
+
+========================================
+REPORT END
+========================================
+Generated: 2025-11-20 00:48:11

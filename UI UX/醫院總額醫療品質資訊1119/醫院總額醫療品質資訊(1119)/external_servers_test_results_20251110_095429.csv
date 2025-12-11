@@ -1,0 +1,5 @@
+﻿"Id","Name","BaseUrl","IsOnline","ResponseTime","FhirVersion","ErrorMessage"
+"1","SMART Health IT R4","https://r4.smarthealthit.org","True","2214","4.0.0",""
+"2","HAPI FHIR Test Server","https://hapi.fhir.org/baseR4","True","2582","4.0.1",""
+"3","FHIR Sandbox","https://launch.smarthealthit.org/v/r4/fhir","True","1939","4.0.0",""
+"4","UHN HAPI FHIR","http://hapi.fhir.org/baseR4","True","2047","4.0.1",""

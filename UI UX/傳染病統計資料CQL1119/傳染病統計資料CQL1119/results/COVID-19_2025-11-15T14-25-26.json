@@ -1,0 +1,39 @@
+{
+  "libraryName": "COVID-19",
+  "timeRange": "過去 2 年",
+  "totalCount": 20,
+  "ageDistribution": {
+    "18-44歲": 5,
+    "45-64歲": 9,
+    "65歲以上": 6
+  },
+  "genderDistribution": {
+    "male": 6,
+    "female": 14,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 6,
+    "急診": 7,
+    "住院": 7,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "COVID-19": 20
+  },
+  "residenceLocation": {
+    "New York, New York": 7,
+    "Florida, Miami": 4,
+    "California, Los Angeles": 3,
+    "Texas, Houston": 5,
+    "Massachusetts, Boston": 1
+  },
+  "serverBreakdown": [
+    {
+      "server": "Sample Data Server",
+      "status": "success",
+      "count": 20
+    }
+  ]
+}

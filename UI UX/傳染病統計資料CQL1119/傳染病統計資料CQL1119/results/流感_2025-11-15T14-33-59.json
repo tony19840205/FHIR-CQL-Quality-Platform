@@ -1,0 +1,42 @@
+{
+  "libraryName": "流感",
+  "timeRange": "過去 2 年",
+  "totalCount": 0,
+  "ageDistribution": {},
+  "genderDistribution": {
+    "male": 0,
+    "female": 0,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 0,
+    "急診": 0,
+    "住院": 0,
+    "其他": 0
+  },
+  "virusTypeDistribution": {},
+  "residenceLocation": {},
+  "serverBreakdown": [
+    {
+      "server": "SMART Server 1",
+      "status": "success",
+      "count": 0
+    },
+    {
+      "server": "SMART Server 2",
+      "status": "success",
+      "count": 0
+    },
+    {
+      "server": "HAPI FHIR Public Test Server",
+      "status": "success",
+      "count": 0
+    },
+    {
+      "server": "Synthea Sample Data Server",
+      "status": "failed",
+      "error": "無法連接到伺服器"
+    }
+  ]
+}

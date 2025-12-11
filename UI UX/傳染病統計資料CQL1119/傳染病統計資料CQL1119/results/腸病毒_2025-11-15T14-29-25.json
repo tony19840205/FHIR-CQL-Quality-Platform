@@ -1,0 +1,38 @@
+{
+  "libraryName": "腸病毒",
+  "timeRange": "過去 2 年",
+  "totalCount": 12,
+  "ageDistribution": {
+    "18-44歲": 3,
+    "45-64歲": 8,
+    "65歲以上": 1
+  },
+  "genderDistribution": {
+    "male": 4,
+    "female": 8,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 4,
+    "急診": 4,
+    "住院": 4,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "Enteroviral vesicular stomatitis with exanthem": 12
+  },
+  "residenceLocation": {
+    "New York, New York": 3,
+    "Massachusetts, Boston": 5,
+    "Florida, Miami": 3,
+    "California, Los Angeles": 1
+  },
+  "serverBreakdown": [
+    {
+      "server": "Sample Data Server",
+      "status": "success",
+      "count": 12
+    }
+  ]
+}

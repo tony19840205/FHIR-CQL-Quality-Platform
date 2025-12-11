@@ -1,0 +1,53 @@
+# SMART on FHIR Server Configuration
+fhir_servers:
+  # Server 1: HAPI FHIR Public Test Server
+  server1:
+    name: "HAPI FHIR Test Server"
+    base_url: "https://hapi.fhir.org/baseR4"
+    auth_type: "none"  # public server
+    enabled: false
+    
+  # Server 2: SMART Health IT Sandbox
+  server2:
+    name: "SMART Health IT Sandbox"
+    base_url: "https://launch.smarthealthit.org/v/r4/fhir"
+    auth_type: "none"  # public sandbox
+    enabled: true
+
+# CQL Files Configuration
+cql_libraries:
+  - name: "Antibiotic_Utilization"
+    file: "Antibiotic_Utilization.cql"
+    enabled: true
+    
+  - name: "EHR_Adoption_Rate"
+    file: "EHR_Adoption_Rate.cql"
+    enabled: true
+    
+  - name: "Waste"
+    file: "Waste.cql"
+    enabled: true
+
+# Data Filter Configuration (控制顯示條件)
+data_filters:
+  # 時間範圍：999年（無限大，將來給工程師設定）
+  time_range:
+    years: 999
+    from_date: null  # 自動計算為今天往前推999年
+    to_date: null    # 自動計算為今天
+  
+  # 顯示欄位控制
+  display_fields:
+    total_patient_count: true
+    patient_age: true
+    patient_gender: true
+    patient_location: true
+    encounter_details: true
+    medication_details: true
+
+# Output Configuration
+output:
+  format: "table"  # options: table, json, csv
+  max_records: 1000
+  show_raw_data: false
+  language: "zh-TW"

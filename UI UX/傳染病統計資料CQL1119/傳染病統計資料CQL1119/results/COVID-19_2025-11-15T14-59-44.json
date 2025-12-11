@@ -1,0 +1,72 @@
+{
+  "libraryName": "COVID-19",
+  "timeRange": "過去 2 年",
+  "totalCount": 6,
+  "ageDistribution": {
+    "45-64歲": 4,
+    "18-44歲": 2
+  },
+  "ageDetailedDistribution": {
+    "40-49歲": 4,
+    "20-29歲": 2
+  },
+  "genderDistribution": {
+    "male": 6,
+    "female": 0,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 6,
+    "急診": 0,
+    "住院": 0,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "COVID-19": 6
+  },
+  "residenceLocation": {
+    "Illinois, Chicago": 4,
+    "New York, New York": 2
+  },
+  "residenceDetailed": {
+    "Illinois, Chicago": 4,
+    "New York, New York": 2
+  },
+  "diagnosisDateDistribution": {
+    "2024Q1": 4,
+    "2024Q2": 2
+  },
+  "monthlyTrend": {
+    "2024-03": 4,
+    "2024-06": 2
+  },
+  "severityDistribution": {
+    "輕症": 6,
+    "中症": 0,
+    "重症": 0,
+    "未知": 0
+  },
+  "serverBreakdown": [
+    {
+      "server": "SMART Server 1",
+      "status": "success",
+      "count": 0
+    },
+    {
+      "server": "SMART Server 2",
+      "status": "success",
+      "count": 0
+    },
+    {
+      "server": "HAPI FHIR Public Test Server",
+      "status": "success",
+      "count": 6
+    },
+    {
+      "server": "Synthea Sample Data Server",
+      "status": "success",
+      "count": 0
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>傳染病數據檢視器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .section {
+            padding: 2rem;
+        }
+        .section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        .disease-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .disease-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid #cbd5e1;
+        }
+        .disease-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #334155;
+        }
+        .disease-card .disease-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .disease-card .disease-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 6px;
+        }
+        .disease-card .disease-stat .label {
+            color: #64748b;
+        }
+        .disease-card .disease-stat .value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .sample-patients {
+            margin-top: 1rem;
+        }
+        .patient-card {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+        .patient-card .patient-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .patient-card .patient-details {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            font-size: 1.2rem;
+            color: #64748b;
+        }
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🦠 傳染病監測數據檢視器</h1>
+            <p>本地生成數據驗證工具</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <p>📊 正在載入數據...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <!-- 總覽統計 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>總病人數</h3>
+                    <div class="value" id="totalPatients">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>就診記錄</h3>
+                    <div class="value" id="totalEncounters">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>診斷記錄</h3>
+                    <div class="value" id="totalConditions">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>觀察記錄</h3>
+                    <div class="value" id="totalObservations">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>疫苗接種</h3>
+                    <div class="value" id="totalImmunizations">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>總資源數</h3>
+                    <div class="value" id="totalResources">0</div>
+                </div>
+            </div>
+
+            <!-- 疾病分類統計 -->
+            <div class="section">
+                <h2>📋 疾病分類統計</h2>
+                <div class="disease-breakdown" id="diseaseBreakdown"></div>
+            </div>
+
+            <!-- 樣本病人 -->
+            <div class="section">
+                <h2>👥 樣本病人資料（前10筆）</h2>
+                <div class="sample-patients" id="samplePatients"></div>
+            </div>
+        </div>
+
+        <div id="error" style="display: none;" class="error"></div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                // 載入 Bundle 數據
+                const response = await fetch('infectious_disease_bundle.json');
+                if (!response.ok) throw new Error('無法載入數據檔案');
+                
+                const bundle = await response.json();
+                console.log('Bundle loaded:', bundle);
+                
+                // 載入統計數據
+                const statsResponse = await fetch('infectious_disease_stats.json');
+                if (!statsResponse.ok) throw new Error('無法載入統計檔案');
+                
+                const stats = await statsResponse.json();
+                console.log('Stats loaded:', stats);
+                
+                // 分析數據
+                analyzeData(bundle, stats);
+                
+            } catch (error) {
+                console.error('Load error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = '❌ 錯誤: ' + error.message + '\n' + error.stack;
+            }
+        }
+
+        function analyzeData(bundle, stats) {
+            // 統計各類型資源
+            const resourceTypes = {};
+            const patients = [];
+            const conditions = [];
+            
+            bundle.entry.forEach(entry => {
+                const resource = entry.resource;
+                const type = resource.resourceType;
+                
+                resourceTypes[type] = (resourceTypes[type] || 0) + 1;
+                
+                if (type === 'Patient') {
+                    patients.push(resource);
+                } else if (type === 'Condition') {
+                    conditions.push(resource);
+                }
+            });
+
+            // 更新統計卡片
+            document.getElementById('totalPatients').textContent = resourceTypes['Patient'] || 0;
+            document.getElementById('totalEncounters').textContent = resourceTypes['Encounter'] || 0;
+            document.getElementById('totalConditions').textContent = resourceTypes['Condition'] || 0;
+            document.getElementById('totalObservations').textContent = resourceTypes['Observation'] || 0;
+            document.getElementById('totalImmunizations').textContent = resourceTypes['Immunization'] || 0;
+            document.getElementById('totalResources').textContent = bundle.entry.length;
+
+            // 疾病分類統計
+            const diseaseStats = stats.disease_distribution;
+            displayDiseaseBreakdown(diseaseStats);
+
+            // 顯示樣本病人
+            displaySamplePatients(patients, conditions);
+
+            // 顯示內容
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        }
+
+        function displayDiseaseBreakdown(diseaseStats) {
+            const container = document.getElementById('diseaseBreakdown');
+            
+            if (!diseaseStats || typeof diseaseStats !== 'object') {
+                console.error('Invalid diseaseStats:', diseaseStats);
+                container.innerHTML = '<p style="color: red;">統計數據格式錯誤</p>';
+                return;
+            }
+            
+            const diseaseNames = {
+                'covid19': '🦠 COVID-19',
+                'influenza': '🤧 流感',
+                'conjunctivitis': '👁️ 急性結膜炎',
+                'enterovirus': '✋ 腸病毒',
+                'diarrhea': '🦠 急性腹瀉'
+            };
+
+            for (const [disease, data] of Object.entries(diseaseStats)) {
+                const card = document.createElement('div');
+                card.className = 'disease-card';
+                
+                const severityHTML = Object.entries(data.severity)
+                    .map(([severity, count]) => `
+                        <div class="disease-stat">
+                            <span class="label">${severity}</span>
+                            <span class="value">${count} 例</span>
+                        </div>
+                    `).join('');
+
+                card.innerHTML = `
+                    <h3>${diseaseNames[disease] || disease}</h3>
+                    <div class="disease-stats">
+                        <div class="disease-stat">
+                            <span class="label">總病例數</span>
+                            <span class="value">${data.total}</span>
+                        </div>
+                        ${severityHTML}
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            }
+        }
+
+        function displaySamplePatients(patients, conditions) {
+            const container = document.getElementById('samplePatients');
+            const sampleSize = Math.min(10, patients.length);
+            
+            for (let i = 0; i < sampleSize; i++) {
+                const patient = patients[i];
+                const patientConditions = conditions.filter(c => 
+                    c.subject.reference === `Patient/${patient.id}`
+                );
+
+                const card = document.createElement('div');
+                card.className = 'patient-card';
+                
+                const conditionList = patientConditions.map(c => {
+                    const code = c.code.coding[0];
+                    return `${code.code} - ${code.display}`;
+                }).join('<br>');
+
+                card.innerHTML = `
+                    <div class="patient-header">
+                        <span>${patient.name[0].text}</span>
+                        <span>${patient.gender === 'male' ? '男' : '女'} | ${patient.birthDate}</span>
+                    </div>
+                    <div class="patient-details">
+                        <strong>ID:</strong> ${patient.id}<br>
+                        <strong>地址:</strong> ${patient.address[0].city}<br>
+                        <strong>診斷:</strong><br>${conditionList || '無診斷記錄'}
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            }
+        }
+
+        // 載入數據
+        loadData();
+    </script>
+</body>
+</html>

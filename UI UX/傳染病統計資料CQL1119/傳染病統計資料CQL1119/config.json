@@ -1,0 +1,81 @@
+{
+  "smartServers": [
+    {
+      "name": "SMART Server 1",
+      "fhirBaseUrl": "https://r4.smarthealthit.org",
+      "enabled": true,
+      "description": "SMART Health IT Public Test Server"
+    },
+    {
+      "name": "SMART Server 2",
+      "fhirBaseUrl": "https://launch.smarthealthit.org/v/r4/fhir",
+      "enabled": true,
+      "description": "SMART Launch Test Server"
+    },
+    {
+      "name": "HAPI FHIR Public Test Server",
+      "fhirBaseUrl": "https://hapi.fhir.org/baseR4",
+      "enabled": true,
+      "description": "HAPI FHIR R4 Public Test Server (5M+ resources)"
+    },
+    {
+      "name": "Synthea Sample Data Server",
+      "fhirBaseUrl": "https://fhir.labs.careevolution.com/fhir/r4",
+      "enabled": true,
+      "description": "CareEvolution FHIR Server with Synthea synthetic data"
+    }
+  ],
+  "cqlLibraries": [
+    {
+      "name": "COVID-19",
+      "file": "COVID19.cql",
+      "enabled": true,
+      "description": "COVID-19 surveillance"
+    },
+    {
+      "name": "流感",
+      "file": "流感.cql",
+      "enabled": true,
+      "description": "Influenza surveillance"
+    },
+    {
+      "name": "紅眼症",
+      "file": "紅眼症.cql",
+      "enabled": true,
+      "description": "Acute conjunctivitis surveillance"
+    },
+    {
+      "name": "腸病毒",
+      "file": "腸病毒.cql",
+      "enabled": true,
+      "description": "Enterovirus surveillance"
+    },
+    {
+      "name": "腹瀉",
+      "file": "腹瀉.cql",
+      "enabled": true,
+      "description": "Acute diarrhea surveillance"
+    }
+  ],
+  "filterCriteria": {
+    "timeRangeYears": 2,
+    "displayFields": [
+      "totalCount",
+      "ageDistribution",
+      "genderDistribution",
+      "encounterTypeDistribution",
+      "virusTypeDistribution",
+      "residenceLocation",
+      "diagnosisDate",
+      "severityLevel",
+      "comorbidities"
+    ],
+    "excludePatientIdentifiers": false
+  },
+  "outputFormat": {
+    "console": true,
+    "json": true,
+    "csv": true,
+    "outputDirectory": "./results"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "libraryName": "腹瀉",
+  "timeRange": "過去 2 年",
+  "totalCount": 20,
+  "ageDistribution": {
+    "65歲以上": 7,
+    "18-44歲": 6,
+    "45-64歲": 7
+  },
+  "genderDistribution": {
+    "male": 11,
+    "female": 9,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 7,
+    "急診": 7,
+    "住院": 6,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "Infectious gastroenteritis and colitis": 20
+  },
+  "residenceLocation": {
+    "Texas, Houston": 3,
+    "New York, New York": 4,
+    "California, Los Angeles": 3,
+    "Massachusetts, Boston": 5,
+    "Florida, Miami": 5
+  },
+  "serverBreakdown": [
+    {
+      "server": "Sample Data Server",
+      "status": "success",
+      "count": 20
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+﻿========================================
+SMART on FHIR Test Report
+========================================
+Test Time: 2025-11-20 00:36:35
+FHIR Server: https://hapi.fhir.org/baseR4
+Total Tests: 10
+Passed: 10
+Failed: 0
+Success Rate: 100%
+Total Records: 40
+
+========================================
+Detailed Results
+========================================
+
+[MedicationRequest]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/MedicationRequest?_count=50
+Records Found: 50
+
+[Medication]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/Medication?_count=50
+Records Found: 50
+
+[Patient]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/Patient?_count=50
+Records Found: 50
+
+[Encounter]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/Encounter?_count=50
+Records Found: 50
+
+[Organization]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/Organization?_count=50
+Records Found: 50
+
+[MedicationRequest (Date Filter)]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/MedicationRequest?date=ge2024-01-01
+Records Found: 20
+
+[Observation]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/Observation?_count=50
+Records Found: 50
+
+[Procedure]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/Procedure?_count=50
+Records Found: 50
+
+[Condition]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/Condition?_count=50
+Records Found: 50
+
+[Server Metadata]
+Status: Success
+URL: https://hapi.fhir.org/baseR4/metadata
+Records Found: 4
+FHIR Version: 4.0.1
+
+========================================
+Test Completed: 2025-11-20 00:36:35
+========================================

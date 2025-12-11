@@ -1,0 +1,44 @@
+{
+  "libraryName": "紅眼症",
+  "timeRange": "過去 2 年",
+  "totalCount": 100,
+  "ageDistribution": {
+    "65歲以上": 37,
+    "18-44歲": 47,
+    "45-64歲": 12,
+    "5-17歲": 4
+  },
+  "genderDistribution": {
+    "male": 33,
+    "female": 67,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 33,
+    "急診": 34,
+    "住院": 33,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "Influenza": 20,
+    "Enteroviral vesicular stomatitis with exanthem": 20,
+    "Mucopurulent conjunctivitis": 20,
+    "Infectious gastroenteritis and colitis": 20,
+    "COVID-19": 20
+  },
+  "residenceLocation": {
+    "Texas, Houston": 18,
+    "New York, New York": 24,
+    "California, Los Angeles": 16,
+    "Florida, Miami": 23,
+    "Massachusetts, Boston": 19
+  },
+  "serverBreakdown": [
+    {
+      "server": "Sample Data Server",
+      "status": "success",
+      "count": 100
+    }
+  ]
+}

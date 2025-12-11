@@ -1,0 +1,30 @@
+{
+  "patient_format": {
+    "id": "291003-21303",
+    "identifier": [
+      {
+        "system": "urn:oid:1.3.6.1.4.1.38760.3.1.1",
+        "value": "291003-21303"
+      }
+    ],
+    "name": [
+      {
+        "family": "EGLE",
+        "given": [
+          "JOLANTA"
+        ]
+      }
+    ],
+    "gender": "female",
+    "birthDate": "1970-10-24",
+    "address": [
+      {
+        "line": [
+          "MASKAVAS IELA 244 - 3"
+        ],
+        "postalCode": "1089",
+        "country": "LV"
+      }
+    ]
+  }
+}

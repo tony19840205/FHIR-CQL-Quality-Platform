@@ -1,0 +1,254 @@
+﻿========================================
+DRUG OVERLAP RATE INDICATORS REPORT
+========================================
+Generated: 2025-11-20 00:50:47
+Data Period: 2024-01-01 to 2025-11-20
+FHIR Server: https://hapi.fhir.org/baseR4
+
+========================================
+INDICATOR 03-2: LIPID-LOWERING DRUG OVERLAP (1711)
+========================================
+
+Definition:
+  ATC Code: C10 (Lipid modifying agents)
+  Category: Same hospital, same patient, different prescriptions
+  Calculation: Overlapping medication days / Total medication days
+
+ATC C10 Subcategories:
+  - C10AA: HMG CoA reductase inhibitors (Statins)
+  - C10AB: Fibrates
+  - C10AC: Bile acid sequestrants
+  - C10AD: Nicotinic acid derivatives
+  - C10AX: Other lipid modifying agents
+  - C10BA: Statins + other combinations
+  - C10BX: Various combinations
+
+Quarterly Data:
+----------------------------------------
+Quarter: 2024Q1 (2024-01-01 to 2024-03-31)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2024Q2 (2024-04-01 to 2024-06-30)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2024Q3 (2024-07-01 to 2024-09-30)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 1
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2024Q4 (2024-10-01 to 2024-12-31)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 77
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q1 (2025-01-01 to 2025-03-31)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 13
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q2 (2025-04-01 to 2025-06-30)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q3 (2025-07-01 to 2025-09-30)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q4 (2025-10-01 to 2025-11-20)
+  Lipid-Lowering Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Summary for Indicator 03-2:
+----------------------------------------
+Total Lipid-Lowering Medications Found: 0
+Unique Patients: 0
+Average per Quarter: 0
+Assessment: Data collected for overlap analysis
+
+Note: Overlap calculation requires same patient, same hospital,
+      different prescriptions with overlapping date ranges.
+      Test server has limited patient linkage data.
+
+========================================
+INDICATOR 03-3: ANTIDIABETIC DRUG OVERLAP (1712)
+========================================
+
+Definition:
+  ATC Code: A10 (Drugs used in diabetes)
+  Category: Same hospital, same patient, different prescriptions
+  Calculation: Overlapping medication days / Total medication days
+
+ATC A10 Subcategories:
+  - A10A: Insulins and analogues
+  - A10B: Blood glucose lowering drugs (oral)
+    * A10BA: Biguanides (Metformin)
+    * A10BB: Sulfonylureas
+    * A10BD: Combinations
+    * A10BG: Thiazolidinediones
+    * A10BH: DPP-4 inhibitors
+    * A10BJ: GLP-1 agonists
+    * A10BK: SGLT2 inhibitors
+    * A10BX: Other oral agents
+
+Quarterly Data:
+----------------------------------------
+Quarter: 2024Q1 (2024-01-01 to 2024-03-31)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2024Q2 (2024-04-01 to 2024-06-30)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2024Q3 (2024-07-01 to 2024-09-30)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 1
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2024Q4 (2024-10-01 to 2024-12-31)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 77
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q1 (2025-01-01 to 2025-03-31)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 13
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q2 (2025-04-01 to 2025-06-30)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q3 (2025-07-01 to 2025-09-30)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Quarter: 2025Q4 (2025-10-01 to 2025-11-20)
+  Antidiabetic Medications: 0
+  Total Medications Queried: 0
+  Unique Patients: 0
+  Detection Rate: 0%
+
+Summary for Indicator 03-3:
+----------------------------------------
+Total Antidiabetic Medications Found: 0
+Unique Patients: 0
+Average per Quarter: 0
+Assessment: Data collected for overlap analysis
+
+Note: Overlap calculation requires same patient, same hospital,
+      different prescriptions with overlapping date ranges.
+      Test server has limited patient linkage data.
+
+========================================
+COMPARISON TABLE
+========================================
+
+Indicator 03-2 vs Indicator 03-3:
+
+| Metric                    | Indicator 03-2 | Indicator 03-3 |
+|---------------------------|----------------|----------------|
+| ATC Code                  | C10            | A10            |
+| Drug Category             | Lipid-Lowering | Antidiabetic   |
+| Total Medications Found   | 0           | 0           |
+| Unique Patients           | 0           | 0           |
+| Average per Quarter       | 0          | 0          |
+
+
+========================================
+OVERLAP CALCULATION METHODOLOGY
+========================================
+
+For both indicators, the overlap rate is calculated as:
+
+Numerator: Sum of overlapping medication days where:
+  - Same hospital ID
+  - Same patient ID
+  - Different prescription IDs
+  - Medication start/end dates overlap
+  - Allow zero-day early refill
+
+Denominator: Total medication days for all prescriptions
+
+Formula:
+  Overlap Rate (%) = (Overlapping Days / Total Days) x 100
+
+Example:
+  Prescription A: 2024-01-01 to 2024-01-30 (30 days)
+  Prescription B: 2024-01-15 to 2024-02-14 (31 days)
+  Overlap: 2024-01-15 to 2024-01-30 (16 days)
+  Total Days: 30 + 31 = 61 days
+  Overlap Rate: (16 / 61) x 100 = 26.23%
+
+
+========================================
+DATA QUALITY NOTES
+========================================
+
+Test Server Limitations:
+1. Limited patient linkage across prescriptions
+2. No hospital organization assignments
+3. Medication dates may not reflect real patterns
+4. ATC codes may be incomplete
+
+For Production Use:
+1. Connect to hospital FHIR server with real data
+2. Ensure proper patient identifiers (MRN)
+3. Verify organization IDs for hospital assignment
+4. Validate ATC code mappings
+5. Check medication dispense dates vs prescribed dates
+
+
+========================================
+FHIR RESOURCE QUERIES USED
+========================================
+
+Query 1: MedicationRequest with date filter
+GET https://hapi.fhir.org/baseR4/MedicationRequest?
+  date=ge{start_date}&
+  date=le{end_date}&
+  _count=100
+
+Query 2: Filter by ATC Code (Post-processing)
+- C10*: Lipid-lowering agents (Indicator 03-2)
+- A10*: Antidiabetic drugs (Indicator 03-3)
+
+Query 3: Extract Patient References
+- MedicationRequest.subject.reference
+
+Query 4: Calculate Overlaps (Requires)
+- MedicationRequest.authoredOn (prescription date)
+- MedicationRequest.dispenseRequest.validityPeriod
+- MedicationRequest.dosageInstruction.timing
+
+
+========================================
+REPORT END
+========================================
+Generated: 2025-11-20 00:51:10

@@ -1,0 +1,11 @@
+{
+  "total_patients": 100,
+  "total_conditions": 100,
+  "total_resources": 200,
+  "disease_distribution": {
+    "covid19": 30,
+    "influenza": 30,
+    "enterovirus": 20,
+    "diarrhea": 20
+  }
+}

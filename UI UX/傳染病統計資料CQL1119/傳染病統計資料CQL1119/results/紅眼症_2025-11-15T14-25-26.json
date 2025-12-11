@@ -1,0 +1,39 @@
+{
+  "libraryName": "紅眼症",
+  "timeRange": "過去 2 年",
+  "totalCount": 20,
+  "ageDistribution": {
+    "65歲以上": 4,
+    "18-44歲": 6,
+    "45-64歲": 10
+  },
+  "genderDistribution": {
+    "male": 8,
+    "female": 12,
+    "other": 0,
+    "unknown": 0
+  },
+  "encounterTypeDistribution": {
+    "門診": 7,
+    "急診": 6,
+    "住院": 7,
+    "其他": 0
+  },
+  "virusTypeDistribution": {
+    "Mucopurulent conjunctivitis": 20
+  },
+  "residenceLocation": {
+    "Texas, Houston": 6,
+    "Massachusetts, Boston": 3,
+    "California, Los Angeles": 5,
+    "New York, New York": 5,
+    "Florida, Miami": 1
+  },
+  "serverBreakdown": [
+    {
+      "server": "Sample Data Server",
+      "status": "success",
+      "count": 20
+    }
+  ]
+}

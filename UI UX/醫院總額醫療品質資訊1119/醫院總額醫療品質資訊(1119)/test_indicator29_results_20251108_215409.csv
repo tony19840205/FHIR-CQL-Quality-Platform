@@ -1,0 +1,5 @@
+﻿"ServerName","ServerUrl","Patients","JointRepair","ThyroidSurgery","JointReplacement","TotalCleanSurgeries","AntibioticOver3Days","Rate","Status"
+"HAPI FHIR Test Server","https://hapi.fhir.org/baseR4","20","0","0","0","0","0","0","Success"
+"SMART Health IT","https://r4.smarthealthit.org","20","0","0","0","0","0","0","Success"
+"UHN HAPI FHIR Server","https://fhir.uhn.ca/baseR4",,,,,,,,"Failed - No Data"
+"Vonk FHIR Server","https://vonk.fire.ly/R4",,,,,,,,"Failed - No Data"

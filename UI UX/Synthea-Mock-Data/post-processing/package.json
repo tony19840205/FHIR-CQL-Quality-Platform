@@ -1,0 +1,23 @@
+{
+  "name": "synthea-mock-data-postprocessing",
+  "version": "1.0.0",
+  "description": "後處理腳本，為 Synthea 生成的 FHIR 資料添加真實變異",
+  "main": "add-realistic-noise.js",
+  "scripts": {
+    "process": "node add-realistic-noise.js",
+    "adjust": "node adjust-indicators.js",
+    "validate": "node validate-fhir.js",
+    "all": "npm run process && npm run adjust && npm run validate"
+  },
+  "keywords": [
+    "fhir",
+    "synthea",
+    "medical-data",
+    "synthetic-data"
+  ],
+  "author": "FHIR Dashboard Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
