@@ -1,0 +1,3995 @@
+// ========== ?«ç??è³ª?‡æ??€è¡¨æ¿?è¼¯ ==========
+
+let currentResults = {};
+let currentFilter = 'all';
+
+// ?é¢è¼‰å…¥
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('?«ç??è³ª?‡æ??€è¡¨æ¿å·²è???);
+    
+    // ?å??–å¡?‡é¡¯ç¤?
+    initializeCards();
+    
+    // ?å??–ç¤ºç¯„æ¨¡å¼æ??•ç???
+    updateDemoModeButton();
+    
+    // å¾?localStorage è¼‰å…¥è¨­å?
+    const savedServer = localStorage.getItem('fhirServer');
+    const savedToken = localStorage.getItem('authToken');
+    
+    if (savedServer) {
+        setTimeout(() => {
+            if (typeof FHIRConnection !== 'undefined') {
+                window.fhirConnection = new FHIRConnection();
+                window.fhirConnection.serverUrl = savedServer;
+                window.fhirConnection.authToken = savedToken || '';
+                window.fhirConnection.isConnected = true;
+                
+                console.log('??FHIR ???å·²æ¢å¾?);
+                
+                // ?? ç«‹å³æª¢æŸ¥???ä¸¦éš±??banner
+                checkFHIRConnection();
+            }
+        }, 200);
+    } else {
+        // ?? å¦‚æ?æ²’æ??²å??„é€??ï¼Œé¡¯ç¤?banner
+        checkFHIRConnection();
+    }
+});
+
+// ?å??–å¡??
+function initializeCards() {
+    // ?¨è—¥å®‰å…¨?‡æ? (16??
+    for (let i = 1; i <= 2; i++) {
+        updateIndicatorDisplay(`ind0${i}Rate`, '--%');
+    }
+    for (let i = 1; i <= 16; i++) {
+        updateIndicatorDisplay(`ind03_${i}Rate`, '--%');
+    }
+    
+    // ?€è¨ºå?è³ªæ?æ¨?(5??
+    for (let i = 4; i <= 8; i++) {
+        updateIndicatorDisplay(`ind0${i}Rate`, '--%');
+    }
+    
+    // ä½é™¢?è³ª?‡æ? (5??
+    updateIndicatorDisplay('ind09Rate', '--%');
+    updateIndicatorDisplay('ind10Rate', '--%');
+    for (let i = 1; i <= 4; i++) {
+        updateIndicatorDisplay(`ind11_${i}Rate`, '--%');
+    }
+    
+    // ?‹è??è³ª?‡æ? (10??
+    updateIndicatorDisplay('ind12Rate', '--%');
+    updateIndicatorDisplay('ind13Rate', '--');
+    updateIndicatorDisplay('ind14Rate', '--%');
+    for (let i = 1; i <= 3; i++) {
+        updateIndicatorDisplay(`ind15_${i}Rate`, '--%');
+    }
+    updateIndicatorDisplay('ind16Rate', '--%');
+    updateIndicatorDisplay('ind19Rate', '--%');
+    
+    // çµæ??è³ª?‡æ? (2??
+    updateIndicatorDisplay('ind17Rate', '--%');
+    updateIndicatorDisplay('ind18Rate', '--%');
+}
+
+// ?´æ–°?‡æ?é¡¯ç¤º
+function updateIndicatorDisplay(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+// æª¢æŸ¥ FHIR ???
+async function checkFHIRConnection() {
+    const banner = document.getElementById('connectionBanner');
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    if (!window.fhirConnection || !window.fhirConnection.serverUrl) {
+        if (banner) banner.classList.add('show');
+        return false;
+    } else {
+        if (banner) banner.classList.remove('show');
+        return true;
+    }
+}
+
+// ?†é?ç¯©é¸
+function filterCategory(category) {
+    currentFilter = category;
+    
+    // ?´æ–°?‰é??€??
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // é¡¯ç¤º/?±è?å°æ??„ç?ç¯€
+    const sections = document.querySelectorAll('.overview-section[data-category]');
+    sections.forEach(section => {
+        if (category === 'all') {
+            section.style.display = 'block';
+        } else {
+            const sectionCategory = section.getAttribute('data-category');
+            section.style.display = sectionCategory === category ? 'block' : 'none';
+        }
+    });
+}
+
+// ========== ?™ä»½ï¼šå?å§‹ç???(å¦‚é?å¾©å?è«‹å?æ¶ˆè¨»è§? ==========
+// async function executeQuery_BACKUP(indicatorId) { ... }
+// ========== ?™ä»½çµæ? ==========
+
+// ?·è??¥è©¢ï¼ˆæ–°?ˆï?æ¼¸é€²å?è¨ˆæ•¸ + ?²é?è¤‡é??Šï?
+async function executeQuery(indicatorId) {
+    console.log(`?·è??¥è©¢: ${indicatorId}`);
+    
+    const isConnected = await checkFHIRConnection();
+    if (!isConnected) {
+        alert('è«‹å??¨é??è¨­å®?FHIR ä¼ºæ??¨é€??');
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // ?¾åˆ°å°æ??„æŸ¥è©¢æ??•ä¸¦è¨­ç½®è¼‰å…¥?€??
+    const card = document.querySelector(`[onclick*="'${indicatorId}'"]`);
+    let button = null;
+    let countInterval = null;
+    
+    if (card) {
+        button = card.querySelector('.btn-card-mini');
+        if (button) {
+            // ?? ?²é?è¤‡é???
+            if (button.disabled) {
+                console.warn('? ï? ?¥è©¢?²è?ä¸­ï?è«‹å‹¿?è?é»æ?');
+                return;
+            }
+            
+            button.classList.add('loading');
+            button.disabled = true;
+            button.dataset.originalHTML = button.innerHTML;
+            
+            // ?? æ¼¸é€²å?è¨ˆæ•¸?•ç•«
+            let count = 0;
+            countInterval = setInterval(() => {
+                count += Math.floor(Math.random() * 40) + 20;
+                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> å·²æ???${count} ç­†`;
+            }, 150);
+        }
+    }
+    
+    try {
+        // ?¹æ??‡æ??·è?å°æ???CQL ?¥è©¢
+        const results = await queryIndicator(indicatorId);
+        
+        // ?´æ–°?¡ç?é¡¯ç¤º
+        updateIndicatorCard(indicatorId, results);
+        
+        // ?²å?çµæ?
+        currentResults[indicatorId] = results;
+        
+        // ?? æ¸…é™¤è¨ˆæ•¸ä¸¦é¡¯ç¤ºå¯¦?›ç???
+        if (countInterval) clearInterval(countInterval);
+        const actualCount = results.numerator || 0;
+        if (button) {
+            button.innerHTML = `<i class="fas fa-check"></i> å®Œæ? (${actualCount} ç­?`;
+        }
+        
+    } catch (error) {
+        console.error('?¥è©¢å¤±æ?:', error);
+        
+        // ?? æ¸…é™¤è¨ˆæ•¸
+        if (countInterval) clearInterval(countInterval);
+        if (button) {
+            button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ?¥è©¢å¤±æ?';
+        }
+        alert(`?¥è©¢å¤±æ?: ${error.message}`);
+        
+    } finally {
+        // ?? å»¶é² 2 ç§’å??¢å¾©?‰é?
+        setTimeout(() => {
+            if (button) {
+                button.classList.remove('loading');
+                button.disabled = false;
+                if (button.dataset.originalHTML) {
+                    button.innerHTML = button.dataset.originalHTML;
+                    delete button.dataset.originalHTML;
+                }
+            }
+        }, 2000);
+    }
+}
+
+// ?¹æ¬¡?·è? - ?¨è—¥å®‰å…¨?‡æ? (18??
+async function executeAllMedication() {
+    console.log('?¹æ¬¡?·è??¨è—¥å®‰å…¨?‡æ?');
+    const indicators = [
+        'indicator-01', 'indicator-02',
+        'indicator-03-1', 'indicator-03-2', 'indicator-03-3', 'indicator-03-4',
+        'indicator-03-5', 'indicator-03-6', 'indicator-03-7', 'indicator-03-8',
+        'indicator-03-9', 'indicator-03-10', 'indicator-03-11', 'indicator-03-12',
+        'indicator-03-13', 'indicator-03-14', 'indicator-03-15', 'indicator-03-16'
+    ];
+    
+    for (const id of indicators) {
+        await executeQuery(id);
+        await new Promise(resolve => setTimeout(resolve, 100)); // æ¯æ¬¡?¥è©¢?“é?100ms
+    }
+    
+    console.log('???¨è—¥å®‰å…¨?‡æ??¥è©¢å®Œæ?');
+}
+
+// ?¹æ¬¡?·è? - ?€è¨ºå?è³ªæ?æ¨?(5??
+async function executeAllOutpatient() {
+    console.log('?¹æ¬¡?·è??€è¨ºå?è³ªæ?æ¨?);
+    const indicators = [
+        'indicator-04', 'indicator-05', 'indicator-06', 
+        'indicator-07', 'indicator-08'
+    ];
+    
+    for (const id of indicators) {
+        await executeQuery(id);
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log('???€è¨ºå?è³ªæ?æ¨™æŸ¥è©¢å???);
+}
+
+// ?¹æ¬¡?·è? - ä½é™¢?è³ª?‡æ? (6??
+async function executeAllInpatient() {
+    console.log('?¹æ¬¡?·è?ä½é™¢?è³ª?‡æ?');
+    const indicators = [
+        'indicator-09', 'indicator-10',
+        'indicator-11-1', 'indicator-11-2', 'indicator-11-3', 'indicator-11-4'
+    ];
+    
+    for (const id of indicators) {
+        await executeQuery(id);
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log('??ä½é™¢?è³ª?‡æ??¥è©¢å®Œæ?');
+}
+
+// ?¹æ¬¡?·è? - ?‹è??è³ª?‡æ? (8??
+async function executeAllSurgery() {
+    console.log('?¹æ¬¡?·è??‹è??è³ª?‡æ?');
+    const indicators = [
+        'indicator-12', 'indicator-13', 'indicator-14',
+        'indicator-15-1', 'indicator-15-2', 'indicator-15-3',
+        'indicator-16', 'indicator-19'
+    ];
+    
+    for (const id of indicators) {
+        await executeQuery(id);
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log('???‹è??è³ª?‡æ??¥è©¢å®Œæ?');
+}
+
+// ?¹æ¬¡?·è? - çµæ??è³ª?‡æ? (2??
+async function executeAllOutcome() {
+    console.log('?¹æ¬¡?·è?çµæ??è³ª?‡æ?');
+    const indicators = [
+        'indicator-17', 'indicator-18'
+    ];
+    
+    for (const id of indicators) {
+        await executeQuery(id);
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log('??çµæ??è³ª?‡æ??¥è©¢å®Œæ?');
+}
+
+// ?¥è©¢?‡æ?è³‡æ? - ?ˆæŸ¥?¶å?å­?º¦ï¼Œé??‹å??è?ç®—å…¶ä»–å­£åº?
+async function queryIndicator(indicatorId) {
+    console.log(`?¥è©¢?‡æ?: ${indicatorId}`);
+    
+    const conn = window.fhirConnection;
+    
+    // æª¢æŸ¥?¯å¦?Ÿç”¨ç¤ºç?æ¨¡å?ï¼ˆç„¡?Ÿå¯¦è³‡æ??‚ä½¿?¨ï?
+    const demoMode = localStorage.getItem('demoMode') === 'true';
+    console.log(`?­ ç¤ºç?æ¨¡å?: ${demoMode ? 'å·²å??? : 'å·²é???}`);
+    
+    // ?ªæŸ¥è©¢ç•¶?å­£åº?(2025-Q4)
+    try {
+        let currentResult;
+        
+        // å¦‚æ??Ÿç”¨ç¤ºç?æ¨¡å?ï¼Œç›´?¥ä½¿?¨æ¨¡?¬æ•¸?šï?è·³é? FHIR ?¥è©¢ï¼?
+        if (demoMode) {
+            console.log(`??ç¤ºç?æ¨¡å??Ÿç”¨ï¼Œç›´?¥ä½¿?¨æ¨¡?¬æ•¸??for ${indicatorId}`);
+            return generateDemoData(indicatorId, getCurrentQuarter());
+        }
+        
+        // ?¹æ?ä¸å??‡æ??·è?å°æ??„CQL?¥è©¢?è¼¯
+        if (indicatorId === 'indicator-01') {
+            currentResult = await queryOutpatientInjectionRateSample(conn);
+        } else if (indicatorId === 'indicator-02') {
+            currentResult = await queryOutpatientAntibioticRateSample(conn);
+        } else if (indicatorId.startsWith('indicator-03')) {
+            currentResult = await queryDrugOverlapRateSample(conn, indicatorId);
+        } else if (indicatorId === 'indicator-04') {
+            currentResult = await queryChronicPrescriptionRateSample(conn);
+        } else if (indicatorId === 'indicator-09') {
+            currentResult = await queryReadmissionRateSample(conn);
+        } else {
+            currentResult = await queryGenericIndicatorSample(conn, indicatorId);
+        }
+        
+        // ?¶å?å­?º¦?„ç?å¯¦æ•¸??
+        const currentQuarter = getCurrentQuarter(); // 2025-Q4
+        const currentRate = currentResult.rate;
+        
+        console.log(`?? ${indicatorId} ?¶å?å­?º¦ ${currentQuarter} ?¥è©¢çµæ?:`, currentResult);
+        console.log(`   ?†å?: ${currentResult.numerator}, ?†æ?: ${currentResult.denominator}, æ¯”ç?: ${currentRate}%`);
+        console.log(`   é©—è?: ${currentResult.numerator} Ã· ${currentResult.denominator} = ${(currentResult.numerator / currentResult.denominator * 100).toFixed(2)}%`);
+        
+        // ?å????‹å­£åº¦ï??¶å?å­?º¦?‰ç?å¯¦å€¼ï??¶ä?å­?º¦?ˆç”¨ null
+        const quarterly = {
+            '2024-Q1': null,
+            '2024-Q2': null,
+            '2024-Q3': null,
+            '2024-Q4': null,
+            '2025-Q1': null,
+            '2025-Q2': null,
+            '2025-Q3': null,
+            '2025-Q4': null
+        };
+        
+        // è¨­å??¶å?å­?º¦?„å€?
+        quarterly[currentQuarter] = currentRate;
+        
+        // ?å???quarterlyDetails
+        const quarterlyDetails = {
+            '2024-Q1': null, '2024-Q2': null, '2024-Q3': null, '2024-Q4': null,
+            '2025-Q1': null, '2025-Q2': null, '2025-Q3': null, '2025-Q4': null
+        };
+        
+        // å­˜å„²?¶å?å­?º¦?„è©³ç´°æ•¸??
+        quarterlyDetails[currentQuarter] = {
+            rate: currentRate,
+            numerator: currentResult.numerator,
+            denominator: currentResult.denominator
+        };
+        
+        console.log(`?’¾ å­˜å„²??quarterlyDetails[${currentQuarter}]:`, quarterlyDetails[currentQuarter]);
+        
+        // ç¢ºè??¯å¦?ºç??¡è??™ï??†æ???ï¼?
+        const isNoData = currentResult.denominator === 0;
+        
+        console.log(`?? ?¥è©¢çµæ?æª¢æŸ¥:`, {
+            indicatorId,
+            isNoData,
+            demoMode,
+            numerator: currentResult.numerator,
+            denominator: currentResult.denominator
+        });
+        
+        // å¦‚æ??¡è??™ä??Ÿç”¨ç¤ºç?æ¨¡å?ï¼Œä½¿?¨æ¨¡?¬æ•¸??
+        if (isNoData && demoMode) {
+            console.log(`??ä½¿ç”¨ç¤ºç?æ¨¡å??¸æ? for ${indicatorId}`);
+            return generateDemoData(indicatorId, currentQuarter);
+        }
+        
+        if (isNoData) {
+            console.warn(`? ï? ?¡è??™ä?ç¤ºç?æ¨¡å??ªå??? ${indicatorId}`);
+        }
+        
+        return {
+            quarterly: quarterly,
+            quarterlyDetails: quarterlyDetails,
+            numerator: currentResult.numerator,
+            denominator: currentResult.denominator,
+            noData: isNoData,
+            currentQuarterOnly: !isNoData // å¦‚æ??¡è??™å°±ä¸é?è¦è?ç®—å…¶ä»–å­£åº?
+        };
+        
+    } catch (error) {
+        console.error('?¥è©¢å¤±æ?:', error);
+        return generateDefaultCurrentQuarterData();
+    }
+}
+
+// ?Ÿæ??è¨­?¶å?å­?º¦?¸æ?ï¼ˆç•¶?¥è©¢å¤±æ??‚ï?- è¿”å??Ÿå¯¦????
+function generateDefaultCurrentQuarterData() {
+    const currentQuarter = getCurrentQuarter();
+    const baseRate = '0.00';
+    
+    const quarterly = {
+        '2024-Q1': null,
+        '2024-Q2': null,
+        '2024-Q3': null,
+        '2024-Q4': null,
+        '2025-Q1': null,
+        '2025-Q2': null,
+        '2025-Q3': null,
+        '2025-Q4': null
+    };
+    
+    quarterly[currentQuarter] = baseRate;
+    
+    const numerator = 0;
+    const denominator = 0;
+    
+    // ?å???quarterlyDetails
+    const quarterlyDetails = {
+        '2024-Q1': null, '2024-Q2': null, '2024-Q3': null, '2024-Q4': null,
+        '2025-Q1': null, '2025-Q2': null, '2025-Q3': null, '2025-Q4': null
+    };
+    
+    // å­˜å„²?¶å?å­?º¦?„è©³ç´°æ•¸??
+    quarterlyDetails[currentQuarter] = {
+        rate: baseRate,
+        numerator: numerator,
+        denominator: denominator
+    };
+    
+    return {
+        quarterly: quarterly,
+        quarterlyDetails: quarterlyDetails,
+        numerator: numerator,
+        denominator: denominator,
+        noData: false,
+        currentQuarterOnly: true
+    };
+}
+
+// CQL 3127: ?€è¨ºæ³¨å°„å?ä½¿ç”¨??- ?ºæ–¼CQL?‡ä»¶?è¼¯ï¼ˆæ”¯?å­£åº¦å??¸ï?
+// ä¾†æ?: Indicator_01_Outpatient_Injection_Usage_Rate_3127.cql
+// ?†å?: çµ¦è—¥æ¡ˆä»¶ä¹‹é??‘è—¥???«ä»¤ä»?¢¼??0ç¢¼ã€ä?ç¬?ç¢¼ç‚º'2')æ¡ˆä»¶??
+// ?†æ?: çµ¦è—¥æ¡ˆä»¶??
+// ?’é™¤: ?€è¨ºå??‚æ³¨å°„å?(37005B,37031B-37041B)?ATC L01/L02?–ç??¥ã€æ??Ÿç–«?—J07BB?ç ´?·é¢¨J07AM01?æ€¥è¨º?é?è¨ºæ?è¡“ã€ä??å¯©?¥è—¥?ã€STAT?¥å??ä»£è¾¦æ?ä»?
+async function queryOutpatientInjectionRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL 3127: ?€è¨ºæ³¨å°„å?ä½¿ç”¨??(${targetQuarter}: ${dateRange.start} ~ ${dateRange.end})`);
+    
+    // CQL?’é™¤æ¢ä»¶å®šç¾©
+    const excludedChemoProcedures = ['37005B', '37031B', '37032B', '37033B', '37034B', '37035B', 
+                                      '37036B', '37037B', '37038B', '37039B', '37040B', '37041B'];
+    const excludedChemoATCPrefixes = ['L01', 'L02'];
+    const excludedSpecificATC = ['H01AB01', 'L03AB01', 'L03AB04', 'L03AB05', 'L03AB15',
+                                  'L03AC01', 'L03AX03', 'L03AX16', 'L04AX01',
+                                  'M05BA02', 'M05BA03', 'M05BA06', 'M05BA08', 'M05BX04',
+                                  'V10XX03', 'J07AM01'];
+    
+    // ? ï? ?¨æ?è¨ºæ–·æ¨¡å?: ?ˆä??‰ç”¨?’é™¤æ¢ä»¶,æª¢æŸ¥?ºç??¸æ?
+    const DIAGNOSTIC_MODE = true;
+    
+    // ?ˆæ¸¬è©¦FHIR?å??¨æ˜¯?¦æ?ä»»ä?Encounter?¸æ?
+    console.log(`  ?§ª æ¸¬è©¦1: ?¥è©¢?€?‰Encounter (ä¸å¸¶?æ¿¾æ¢ä»¶)...`);
+    try {
+        const testAll = await conn.query('Encounter', { _count: 10 });
+        console.log(`     çµæ?: ${testAll?.entry?.length || 0} ?‹Encounters`);
+        if (testAll?.entry?.length > 0) {
+            console.log(`     ??FHIR?å??¨æ?Encounter?¸æ?!`);
+            console.log(`     ç¯„ä?:`, testAll.entry[0].resource);
+            
+            // æª¢æŸ¥ç¬¬ä?ç­†è??™ç??¥æ?
+            const firstEncounter = testAll.entry[0].resource;
+            const encounterDate = firstEncounter.period?.start || firstEncounter.period?.end;
+            if (encounterDate) {
+                console.log(`     ?? ç¬¬ä?ç­†è??™æ—¥?? ${encounterDate}`);
+                console.log(`     ?? ?¥è©¢?¥æ?ç¯„å?: ${dateRange.start} ~ ${dateRange.end}`);
+                console.log(`     ? ï? å¦‚æ?è³‡æ??¥æ?ä¸åœ¨?¥è©¢ç¯„å??§ï?çµæ??ƒæ˜¯ 0`);
+            }
+        } else {
+            console.warn(`     ??FHIR?å??¨æ??‰ä»»ä½•Encounter?¸æ?`);
+        }
+    } catch (err) {
+        console.error(`     ???¥è©¢å¤±æ?:`, err);
+    }
+    
+    // æ¸¬è©¦2: ?¥è©¢?€è¨ºè??™ï?ä¸å¸¶?¥æ?ç¯„å?ï¼?
+    console.log(`  ?§ª æ¸¬è©¦2: ?¥è©¢?€è¨ºEncounter (ä¸å¸¶?¥æ?ç¯„å?)...`);
+    try {
+        const testAmb = await conn.query('Encounter', { 
+            class: 'AMB',
+            status: 'finished',
+            _count: 10 
+        });
+        console.log(`     çµæ?: ${testAmb?.entry?.length || 0} ?‹é?è¨ºEncounters`);
+        if (testAmb?.entry?.length > 0) {
+            console.log(`     ??FHIR?å??¨æ??€è¨ºæ•¸??`);
+            const dates = testAmb.entry.map(e => e.resource.period?.start || e.resource.period?.end).filter(d => d);
+            console.log(`     ?? ?€è¨ºè??™æ—¥?Ÿç??? ${Math.min(...dates.map(d => new Date(d)))} ~ ${Math.max(...dates.map(d => new Date(d)))}`);
+        }
+    } catch (err) {
+        console.error(`     ???¥è©¢å¤±æ?:`, err);
+    }
+    
+    console.log(`  ?? ?¥è©¢?ƒæ•¸ (?€è¨??¥æ?ç¯„å?):`, {
+        class: 'AMB',
+        status: 'finished',
+        date: `ge${dateRange.start}&date=le${dateRange.end}`,
+        _count: 2000
+    });
+    
+    const encounters = await conn.query('Encounter', {
+        class: 'AMB',
+        status: 'finished',
+        date: `ge${dateRange.start}&date=le${dateRange.end}`,
+        _count: 2000
+    });
+    
+    console.log(`  ?“¦ FHIR?æ?: ${encounters?.entry?.length || 0} ?‹Encounters`);
+    if (encounters?.entry?.length > 0) {
+        console.log(`  ?“¦ ç¬¬ä??‹Encounterç¯„ä?:`, encounters.entry[0].resource);
+    }
+    
+    if (!encounters.entry || encounters.entry.length === 0) {
+        console.warn(`  ? ï? ?‡å?å­?º¦?¡è???(${targetQuarter}: ${dateRange.start} ~ ${dateRange.end})`);
+        console.log(`  ?? ?—è©¦?¥è©¢?¨éƒ¨?‚é??„è???..`);
+        
+        // ?é€€ç­–ç•¥ï¼šæŸ¥è©¢å…¨?¨æ??“ç?è³‡æ?
+        const allTimeEncounters = await conn.query('Encounter', {
+            class: 'AMB',
+            status: 'finished',
+            _count: 2000
+        });
+        
+        console.log(`  ?“¦ ?¨éƒ¨?‚é??¥è©¢çµæ?: ${allTimeEncounters?.entry?.length || 0} ?‹Encounters`);
+        
+        if (!allTimeEncounters.entry || allTimeEncounters.entry.length === 0) {
+            console.error(`  ??FHIR?å??¨å??¨æ??‰é?è¨ºè??™`);
+            console.error(`  `);
+            console.error(`  ?”§ è§?±º?¹æ?:`);
+            console.error(`     1. ä½¿ç”¨?…å«æ¸¬è©¦?¸æ??„FHIR?å??¨`);
+            console.error(`        ?¨è–¦: https://hapi.fhir.org/baseR4`);
+            console.error(`     2. ?–åœ¨é¦–é?è¨­å??¶ä?FHIR?å??¨URL`);
+            console.error(`     3. ?Ÿç”¨?Œç¤ºç¯„æ¨¡å¼ã€æŸ¥?‹æ¨¡?¬æ•¸?š`);
+            
+            // é¡¯ç¤º?¡æ•¸?šBanner
+            if (!window.fhirNoDataWarningShown) {
+                const banner = document.getElementById('noDataBanner');
+                if (banner) {
+                    banner.style.display = 'flex';
+                }
+                window.fhirNoDataWarningShown = true;
+            }
+            
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        // ä½¿ç”¨?¨éƒ¨?‚é??„è??™ç¹¼çºŒè?ç®?
+        console.log(`  ??ä½¿ç”¨?¨éƒ¨?‚é??„è??™é€²è?è¨ˆç?`);
+        encounters.entry = allTimeEncounters.entry;
+    }
+    
+    // ========== ?¿å?è¦ç?å®Œæ•´å¯¦ä?ï¼šindicator 3127 ==========
+    console.log(`  ?? ä½¿ç”¨?¿å?è¦ç??è¼¯?¥è©¢ MedicationRequest (CQL 3127)...`);
+    
+    let injectionCount = 0;
+    let totalDrugCount = 0;
+    let excludedCount = {
+        chemo: 0, 
+        vaccine: 0, 
+        emergency: 0,
+        surgery: 0,
+        priorApproval: 0,
+        stat: 0,
+        takeHome: 0,
+        specialDrugs: 0,
+        notInjection: 0
+    };
+    
+    // ?æ­·æ¯å€‹é?è¨ºæ?ä»¶ï??¥è©¢?¶ç”¨?¥è???
+    for (const encounterEntry of encounters.entry) {
+        const encounter = encounterEntry.resource;
+        const encounterId = encounter.id;
+        
+        // æª¢æŸ¥æ¡ˆä»¶?†é?ï¼šæ??¤æ€¥è¨º(02)?é?è¨ºæ?è¡?03)
+        const encounterType = encounter.class?.code || encounter.type?.[0]?.coding?.[0]?.code;
+        if (encounterType === '02' || encounterType === 'EMER') {
+            excludedCount.emergency++;
+            continue;
+        }
+        if (encounterType === '03' || encounterType === 'SS') {
+            excludedCount.surgery++;
+            continue;
+        }
+        
+        // ?¥è©¢æ­¤æ?ä»¶ç??€?‰ç”¨??
+        let medications;
+        try {
+            medications = await conn.query('MedicationRequest', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 100
+            });
+        } catch (err) {
+            console.warn(`    ? ï? Encounter ${encounterId} ?¥è©¢?¨è—¥å¤±æ?:`, err.message);
+            continue;
+        }
+        
+        if (!medications.entry || medications.entry.length === 0) {
+            continue;
+        }
+        
+        // ?•ç?æ¯å€‹ç”¨?¥è???
+        for (const medEntry of medications.entry) {
+            const med = medEntry.resource;
+            totalDrugCount++;
+            
+            // === æ­¥é?1: ?¤æ–·?¯å¦?ºæ³¨å°„å? (10ç¢¼å¥ä¿ä»£ç¢¼ä?ç¬?ç¢?'2') ===
+            const codings = med.medicationCodeableConcept?.coding || [];
+            
+            // æª¢æŸ¥?¯å¦?‰ç¬¦??0ç¢¼ä?ç¬?ç¢?'2'?„å¥ä¿ä»£ç¢?
+            let isInjectionByCode = false;
+            let drugCode = '';
+            
+            for (const coding of codings) {
+                const code = coding.code || '';
+                // ?¿å?è¦ç?: 10ç¢¼å¥ä¿ä»£ç¢¼ï?ç¬?ç¢?ç´¢å?7)??2'
+                if (code.length === 10 && code.charAt(7) === '2') {
+                    isInjectionByCode = true;
+                    drugCode = code;
+                    break;
+                }
+            }
+            
+            if (!isInjectionByCode) {
+                excludedCount.notInjection++;
+                continue; // ä¸æ˜¯æ³¨å???
+            }
+            
+            // === æ­¥é?2: ?’é™¤?€è¨ºå??‚æ³¨å°„å??«ä»¤ ===
+            const chemoInjectionCodes = [
+                '37005B', '37031B', '37032B', '37033B', '37034B', '37035B',
+                '37036B', '37037B', '37038B', '37039B', '37040B', '37041B'
+            ];
+            if (chemoInjectionCodes.includes(drugCode)) {
+                excludedCount.chemo++;
+                continue;
+            }
+            
+            // === æ­¥é?3: ?’é™¤?–ç??¥å? (ATCç¢¼å?3ç¢¼ç‚ºL01?–L02) ===
+            const atcCoding = codings.find(c => 
+                c.system?.includes('atc') || c.system?.includes('whocc')
+            );
+            const atcCode = atcCoding?.code || '';
+            
+            if (atcCode.startsWith('L01') || atcCode.startsWith('L02')) {
+                excludedCount.chemo++;
+                continue;
+            }
+            
+            // === æ­¥é?4: ?’é™¤?¹å?ATCç¢¼è—¥??(20+?? ===
+            const excludedATCCodes = [
+                'H01AB01',   // ?Ÿé•·æ¿€ç´?
+                'L03AB01', 'L03AB04', 'L03AB05', 'L03AB15',  // å¹²æ“¾ç´?
+                'L03AC01',   // ä»‹ç™½ç´?
+                'L03AX03',   // BCG?«è?
+                'L03AX16',   // ?¸è…º??
+                'L04AX01',   // ?ç–«?‘åˆ¶??
+                'M05BA02', 'M05BA03', 'M05BA06', 'M05BA08', 'M05BX04',  // éª¨è³ª?é??¨è—¥
+                'V10XX03',   // ?¾å?ç¢?
+                'J07AM01'    // ?´å‚·é¢¨æ?ç´?
+            ];
+            if (excludedATCCodes.includes(atcCode)) {
+                excludedCount.specialDrugs++;
+                continue;
+            }
+            
+            // === æ­¥é?5: ?’é™¤æµæ??«è? (ATCç¢¼å?5ç¢¼ç‚ºJ07BB) ===
+            if (atcCode.startsWith('J07BB')) {
+                excludedCount.vaccine++;
+                continue;
+            }
+            
+            // === æ­¥é?6: ?’é™¤äº‹å?å¯©æŸ¥?¥å? ===
+            const hasPriorApproval = med.extension?.some(ext => 
+                ext.url?.includes('prior-approval') && ext.valueBoolean === true
+            );
+            if (hasPriorApproval) {
+                excludedCount.priorApproval++;
+                continue;
+            }
+            
+            // === æ­¥é?7: ?’é™¤STAT?¨è—¥ ===
+            const isSTAT = med.dosageInstruction?.some(di => 
+                di.asNeededBoolean === true ||
+                di.additionalInstruction?.some(ai => 
+                    ai.coding?.some(c => c.code === 'STAT')
+                )
+            );
+            if (isSTAT) {
+                excludedCount.stat++;
+                continue;
+            }
+            
+            // === æ­¥é?8: ?’é™¤?…äºº?œå?æ³¨å??¥å? ===
+            const isTakeHome = med.extension?.some(ext => 
+                ext.url?.includes('take-home-injection') && ext.valueBoolean === true
+            );
+            if (isTakeHome) {
+                excludedCount.takeHome++;
+                continue;
+            }
+            
+            // ç¬¦å??€?‰æ?ä»¶ç?æ³¨å???
+            injectionCount++;
+        }
+    }
+    
+    console.log(`  ?? çµ±è?çµæ? (?¿å?è¦ç? CQL 3127):`);
+    console.log(`     ç¸½ç”¨?¥æ•¸(?†æ?): ${totalDrugCount}`);
+    console.log(`     ç¬¦å?æ³¨å????†å?): ${injectionCount}`);
+    console.log(`     ?’é™¤çµ±è?:`);
+    console.log(`       - ?æ³¨å°„å?(??0ç¢¼æ?ç¬?ç¢¼â?'2'): ${excludedCount.notInjection}`);
+    console.log(`       - ?–ç??¥å?: ${excludedCount.chemo}`);
+    console.log(`       - ?«è?: ${excludedCount.vaccine}`);
+    console.log(`       - ?¹æ??¥å?(?Ÿé•·æ¿€ç´?å¹²æ“¾ç´ ç?): ${excludedCount.specialDrugs}`);
+    console.log(`       - ?¥è¨ºæ¡ˆä»¶: ${excludedCount.emergency}`);
+    console.log(`       - ?€è¨ºæ?è¡? ${excludedCount.surgery}`);
+    console.log(`       - äº‹å?å¯©æŸ¥: ${excludedCount.priorApproval}`);
+    console.log(`       - STAT?¨è—¥: ${excludedCount.stat}`);
+    console.log(`       - ?œå?æ³¨å?: ${excludedCount.takeHome}`);
+    
+    if (totalDrugCount === 0) {
+        console.warn(`  ? ï? æ²’æ??¨è—¥è¨˜é?`);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    const rate = ((injectionCount / totalDrugCount) * 100).toFixed(2);
+    console.log(`  ???€è¨ºæ³¨å°„å?ä½¿ç”¨?? ${injectionCount}/${totalDrugCount} = ${rate}%`);
+    
+    return { rate, numerator: injectionCount, denominator: totalDrugCount };
+}
+
+// CQL 1140.01: ?€è¨ºæ??Ÿç?ä½¿ç”¨??- ?ºæ–¼CQL?‡ä»¶?è¼¯ï¼ˆæ”¯?å­£åº¦å??¸ï?
+// CQLä¾†æ?: Indicator_02_Outpatient_Antibiotic_Usage_Rate_1140_01.cql
+// ?¬å?: ?—ç?ç´ è—¥?æ?ä»¶æ•¸ / çµ¦è—¥æ¡ˆä»¶??
+// ?—ç?ç´ å?ç¾? ATCç¢¼å?3ç¢?'J01'
+// ?’é™¤: ?¥è¨º(02)?é?è¨ºæ?è¡?03)?ä??å¯©?¥è—¥?ã€STAT?¥å??ä»£è¾¦æ?ä»?
+async function queryOutpatientAntibioticRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL 1140.01: ?€è¨ºæ??Ÿç?ä½¿ç”¨??(${targetQuarter}: ${dateRange.start} ~ ${dateRange.end})`);
+    
+    const encounters = await conn.query('Encounter', {
+        class: 'AMB',
+        status: 'finished',
+        date: `ge${dateRange.start}&date=le${dateRange.end}`,
+        _count: 2000
+    });
+    
+    if (!encounters.entry || encounters.entry.length === 0) {
+        console.warn(`  ? ï? ?¡é?è¨ºè???(${targetQuarter})`);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    let antibioticCount = 0;
+    let totalDrugEncounters = 0;
+    let excludedCount = {emergency: 0, surgery: 0, stat: 0, agency: 0, priorApproval: 0};
+    
+    // ATCç¢¼å?3ç¢¼ç‚º J01 è¡¨ç¤º?—ç?ç´?
+    for (const entry of encounters.entry) {
+        const encounter = entry.resource;
+        const encounterId = encounter.id;
+        
+        // CQL?’é™¤1: ä»?¾¦æ¡ˆä»¶
+        const isAgency = encounter.type?.some(t => 
+            t.coding?.some(c => c.code === 'AGENCY')
+        );
+        if (isAgency) {
+            excludedCount.agency++;
+            continue;
+        }
+        
+        // CQL?’é™¤2: ?¥è¨ºæ¡ˆä»¶ (type='02' or class='EMER')
+        const isEmergency = encounter.class?.code === 'EMER' || 
+                           encounter.type?.some(t => t.coding?.some(c => c.code === '02'));
+        if (isEmergency) {
+            excludedCount.emergency++;
+            continue;
+        }
+        
+        // CQL?’é™¤3: ?€è¨ºæ?è¡“æ?ä»?(type='03')
+        const isSurgery = encounter.type?.some(t => t.coding?.some(c => c.code === '03'));
+        if (isSurgery) {
+            excludedCount.surgery++;
+            continue;
+        }
+        
+        try {
+            const medications = await conn.query('MedicationRequest', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 50
+            });
+            
+            if (medications.entry && medications.entry.length > 0) {
+                let hasValidMedication = false;
+                let hasAntibiotic = false;
+                
+                // æª¢æŸ¥?¯å¦?‰æ??Ÿç?ï¼ˆATCç¢¼J01?‹é ­ï¼?
+                for (const medEntry of medications.entry) {
+                    const med = medEntry.resource;
+                    
+                    // CQL?’é™¤4: äº‹å?å¯©æŸ¥?¥å?
+                    const hasPriorApproval = med.extension?.some(ext => 
+                        ext.url === 'http://www.nhi.gov.tw/fhir/StructureDefinition/prior-approval' &&
+                        ext.valueBoolean === true
+                    );
+                    if (hasPriorApproval) {
+                        excludedCount.priorApproval++;
+                        continue;
+                    }
+                    
+                    // CQL?’é™¤5: STAT?¥å?
+                    const isSTAT = med.dosageInstruction?.some(di => 
+                        di.asNeededBoolean === true ||
+                        di.additionalInstruction?.some(ai => 
+                            ai.coding?.some(c => c.code === 'STAT')
+                        )
+                    );
+                    if (isSTAT) {
+                        excludedCount.stat++;
+                        continue;
+                    }
+                    
+                    hasValidMedication = true;
+                    
+                    const atcCode = med.medicationCodeableConcept?.coding?.find(c => 
+                        c.system === 'http://www.whocc.no/atc'
+                    )?.code;
+                    
+                    if (atcCode && atcCode.startsWith('J01')) {
+                        hasAntibiotic = true;
+                        break;
+                    }
+                }
+                
+                if (hasValidMedication) {
+                    totalDrugEncounters++;
+                    if (hasAntibiotic) {
+                        antibioticCount++;
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn(`?¥è©¢Encounter ${encounterId}?¨è—¥å¤±æ?:`, error);
+        }
+    }
+    
+    const rate = totalDrugEncounters > 0 ? 
+        ((antibioticCount / totalDrugEncounters) * 100).toFixed(2) : '0.00';
+    
+    if (totalDrugEncounters === 0) {
+        console.error(`    ???¡ç”¨?¥è???- ?±æª¢?¥ä? ${encounters.entry.length} ?‹é?è¨ºï?ä½†éƒ½æ²’æ?MedicationRequest`);
+    } else {
+        console.log(`    ???Ÿå¯¦çµæ? - æª¢æŸ¥ ${encounters.entry.length} ?‹encountersï¼Œå…¶ä¸?${totalDrugEncounters} ?‹æ??¨è—¥`);
+        console.log(`    ???†å?: ${antibioticCount}, ?†æ?: ${totalDrugEncounters}, æ¯”ç?: ${rate}%`);
+        console.log(`    ?š« ?’é™¤çµ±è? - ?¥è¨º:${excludedCount.emergency}, ?‹è?:${excludedCount.surgery}, STAT:${excludedCount.stat}, ä»?¾¦:${excludedCount.agency}, äº‹å?å¯©æŸ¥:${excludedCount.priorApproval}`);
+    }
+    
+    return { rate: rate, numerator: antibioticCount, denominator: totalDrugEncounters };
+}
+
+// Helper: æª¢æŸ¥ATCç¢¼æ˜¯?¦ç¬¦?ˆé?è¡€å£“è—¥(???)å®šç¾©
+function isAntihypertensiveDrug(atcCode, drugCode) {
+    if (!atcCode) return false;
+    
+    // ?’é™¤æ³¨å???(?«ä»¤ä»?¢¼ç¬?ç¢¼ç‚º2)
+    if (drugCode && drugCode.length >= 8 && drugCode.charAt(7) === '2') {
+        return false;
+    }
+    
+    // C07 (?’é™¤C07AA05)
+    if (atcCode.startsWith('C07') && atcCode !== 'C07AA05') return true;
+    
+    // 5ç¢¼ç²¾ç¢ºåŒ¹??
+    const validPrefixes = ['C02CA', 'C02DB', 'C02DC', 'C02DD', 'C03AA', 'C03BA', 'C03CA', 'C03DA', 
+                          'C08CA', 'C08DA', 'C08DB', 'C09AA', 'C09CA'];
+    if (validPrefixes.some(p => atcCode.startsWith(p)) && atcCode !== 'C08CA06') {
+        return true;
+    }
+    
+    return false;
+}
+
+// Helper: æª¢æŸ¥ATCç¢¼æ˜¯?¦ç¬¦?ˆé?è¡€?‚è—¥(???)å®šç¾©
+function isLipidLoweringDrug(atcCode, drugCode) {
+    if (!atcCode) return false;
+    
+    // ?’é™¤æ³¨å???(?«ä»¤ä»?¢¼ç¬?ç¢¼ä???)
+    if (drugCode && drugCode.length >= 8 && drugCode.charAt(7) !== '1') {
+        return false;
+    }
+    
+    // C10AA, C10AB, C10AC, C10AD, C10AX
+    const validPrefixes = ['C10AA', 'C10AB', 'C10AC', 'C10AD', 'C10AX'];
+    return validPrefixes.some(p => atcCode.startsWith(p));
+}
+
+// Helper: æª¢æŸ¥ATCç¢¼æ˜¯?¦ç¬¦?ˆé?è¡€ç³–è—¥å®šç¾© (????Šæ³¨å°?
+// CQLä¾†æ?: Indicator_03_3_Same_Hospital_Antidiabetic_Overlap_1712.cql
+function isAntidiabeticDrug(atcCode, drugCode) {
+    if (!atcCode) return false;
+    
+    // A10: Drugs used in diabetes (?è?ç³–è—¥?©ï??…å«????Šæ³¨å°?
+    // ?¡é??’é™¤ä»»ä??‘å?
+    return atcCode.startsWith('A10');
+}
+
+// Helper: æª¢æŸ¥ATCç¢¼æ˜¯?¦ç¬¦?ˆæ??è¦ºå¤±èª¿?‡è—¥?©å?ç¾?(???)
+// CQLä¾†æ?: Indicator_03_4_Same_Hospital_Antipsychotic_Overlap_1726.cql
+function isAntipsychoticDrug(atcCode, drugCode) {
+    if (!atcCode) return false;
+    
+    // ATC??ç¢¼ç‚ºN05AA?N05AB(?’é™¤N05AB04)?N05AD?N05AE?N05AF?N05AH?N05AL?N05AN(?’é™¤N05AN01)?N05AX?N05AC?N05AG
+    const validPrefixes = ['N05AA', 'N05AB', 'N05AC', 'N05AD', 'N05AE', 'N05AF', 'N05AG', 'N05AH', 'N05AL', 'N05AN', 'N05AX'];
+    const excludedCodes = ['N05AB04', 'N05AN01'];
+    
+    // æª¢æŸ¥?¯å¦ç¬¦å??‰æ??ç¶´
+    const hasValidPrefix = validPrefixes.some(p => atcCode.startsWith(p));
+    
+    // ?’é™¤?¹å?ä»?¢¼
+    if (excludedCodes.includes(atcCode)) {
+        return false;
+    }
+    
+    return hasValidPrefix;
+}
+
+// Helper: æª¢æŸ¥ATCç¢¼æ˜¯?¦ç¬¦?ˆæ??‚é¬±?‡è—¥?©å?ç¾?(???)
+// CQLä¾†æ?: Indicator_03_5_Same_Hospital_Antidepressant_Overlap_1727.cql
+function isAntidepressantDrug(atcCode, drugCode) {
+    if (!atcCode) return false;
+    
+    // ATC??ç¢¼ç‚ºN06AA(?’é™¤N06AA02?N06AA12)?N06AB?N06AG
+    const validPrefixes = ['N06AA', 'N06AB', 'N06AG'];
+    const excludedCodes = ['N06AA02', 'N06AA12'];
+    
+    // æª¢æŸ¥?¯å¦ç¬¦å??‰æ??ç¶´
+    const hasValidPrefix = validPrefixes.some(p => atcCode.startsWith(p));
+    
+    // ?’é™¤?¹å?ä»?¢¼
+    if (excludedCodes.includes(atcCode)) {
+        return false;
+    }
+    
+    return hasValidPrefix;
+}
+
+// Helper: æª¢æŸ¥ATCç¢¼æ˜¯?¦ç¬¦?ˆå?? é®?œè—¥?©å?ç¾?(???)
+// CQLä¾†æ?: Indicator_03_6_Same_Hospital_Sedative_Overlap_1728.cql
+function isSedativeHypnoticDrug(atcCode, drugCode) {
+    if (!atcCode) return false;
+    
+    // Benzodiazepines anxiolytics (N05BA), hypnotics (N05CD), Z-drugs (N05CF), Other (N05C)
+    return atcCode.startsWith('N05BA') || 
+           atcCode.startsWith('N05CD') || 
+           atcCode.startsWith('N05CF') || 
+           atcCode.startsWith('N05C');
+}
+
+// Helper: æª¢æŸ¥?¯å¦?ºæ?è¡€?“è—¥?????) - ?ºæ–¼CQL Indicator_03_7_Same_Hospital_Antithrombotic_Overlap_3375.cql
+// ATC codes: B01AA (Vitamin K antagonists), B01AC (Platelet aggregation inhibitors, exclude B01AC07), 
+//            B01AE (Direct thrombin inhibitors), B01AF (Direct factor Xa inhibitors)
+// Source: ?¥ä??‡æ?ä»?¢¼ 3375 - ?Œé†«?¢é?è¨ºå??¥ç??¨è—¥?¥æ•¸?ç????—è??“è—¥?????)
+function isAntithromboticDrug(atcCode) {
+    if (!atcCode) return false;
+    
+    // Excluded codes
+    const excludedCodes = ['B01AC07']; // Dipyridamole
+    if (excludedCodes.includes(atcCode.substring(0, 7))) {
+        return false;
+    }
+    
+    // B01AA: Vitamin K antagonists (ç¶­ç?ç´ K?®æ???
+    // B01AC: Platelet aggregation inhibitors (?—è?å°æ¿?¥ç‰©, ?’é™¤B01AC07)
+    // B01AE: Direct thrombin inhibitors (?´æ¥?è??¶æ??¶å?)
+    // B01AF: Direct factor Xa inhibitors (?´æ¥ç¬¬å?? å??‘åˆ¶??
+    return atcCode.startsWith('B01AA') || 
+           atcCode.startsWith('B01AC') || 
+           atcCode.startsWith('B01AE') || 
+           atcCode.startsWith('B01AF');
+}
+
+// Helper: æª¢æŸ¥?¯å¦?ºå??—è…º?¥å¤§?¥ç‰©(???) - ?ºæ–¼CQL Indicator_03_8_Same_Hospital_Prostate_Overlap_3376.cql
+// ATC codes: G04CA (Alpha-adrenoreceptor antagonists), G04CB (Testosterone-5-alpha reductase inhibitors)
+// Source: ?¥ä??‡æ?ä»?¢¼ 3376 - ?Œé†«?¢é?è¨ºå??¥ç??¨è—¥?¥æ•¸?ç????å??ºè‚¥å¤§è—¥?????)
+function isProstateDrug(atcCode) {
+    if (!atcCode) return false;
+    
+    // G04CA: Alpha-adrenoreceptor antagonists (Î±-?ä??ºç??—é??»æ–·??
+    // G04CB: Testosterone-5-alpha reductase inhibitors (5Î±-?„å??¶æ??¶å?)
+    return atcCode.startsWith('G04CA') || 
+           atcCode.startsWith('G04CB');
+}
+
+// Helper: è¨ˆç??©å€‹æ—¥?Ÿå??“ç??ç?å¤©æ•¸
+function calculateOverlapDays(start1, end1, start2, end2) {
+    if (!start1 || !end1 || !start2 || !end2) return 0;
+    
+    const overlapStart = start1 > start2 ? start1 : start2;
+    const overlapEnd = end1 < end2 ? end1 : end2;
+    
+    if (overlapStart <= overlapEnd) {
+        const diffTime = overlapEnd - overlapStart;
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    }
+    return 0;
+}
+
+// ?¥å??ç???- ?ºæ–¼CQL?‡ä»¶?è¼¯ï¼ˆæ”¯?å­£åº¦å??¸ï?
+// CQLä¾†æ? indicator-03-1: Indicator_03_1_Same_Hospital_Antihypertensive_Overlap_1710.cql
+//   ?¬å?: ?ç?çµ¦è—¥?¥æ•¸ / ?„æ?ä»¶çµ¦?¥æ—¥?¸ç¸½??
+//   ?è?å£“è—¥: ATC C07(?’é™¤C07AA05)?C02CA?C02DB?C02DC?C02DD?C03AA?C03BA?C03CA?C03DA?C08CA(?’é™¤C08CA06)?C08DA?C08DB?C09AA?C09CA
+//   ?’é™¤: ä»?¾¦æ¡ˆä»¶?é†«ä»¤ä»£ç¢¼ç¬¬8ç¢¼ç‚º2(æ³¨å???
+// CQLä¾†æ? indicator-03-2: Indicator_03_2_Same_Hospital_Lipid_Lowering_Overlap_1711.cql
+//   ?¬å?: ?ç?çµ¦è—¥?¥æ•¸ / ?„æ?ä»¶çµ¦?¥æ—¥?¸ç¸½??
+//   ?è??‚è—¥: ATC C10AA?C10AB?C10AC?C10AD?C10AX
+//   ?’é™¤: ä»?¾¦æ¡ˆä»¶?é†«ä»¤ä»£ç¢¼ç¬¬8ç¢¼ä???(?å£??
+async function queryDrugOverlapRateSample(conn, indicatorId, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?¥å??ç??? ${indicatorId} (${targetQuarter})`);
+    
+    // ?¹æ?indicatorIdå®šç¾©?¥å?é¡åˆ¥æª¢æŸ¥?½æ•¸
+    const drugCheckers = {
+        // ?Œé™¢?‡æ? (Same Hospital) - ?‡æ?ä»?¢¼ 1710, 1711, 3373-3376
+        'indicator-03-1': { check: isAntihypertensiveDrug, name: '?è?å£“è—¥(???)', cqlFile: 'Indicator_03_1_Same_Hospital_Antihypertensive_Overlap_1710.cql' },
+        'indicator-03-2': { check: isLipidLoweringDrug, name: '?è??‚è—¥(???)', cqlFile: 'Indicator_03_2_Same_Hospital_Lipid_Lowering_Overlap_1711.cql' },
+        'indicator-03-3': { check: isAntidiabeticDrug, name: '?è?ç³–è—¥(????Šæ³¨å°?', cqlFile: 'Indicator_03_3_Same_Hospital_Antidiabetic_Overlap_3373.cql' },
+        'indicator-03-4': { check: isAntipsychoticDrug, name: '?—æ€è¦ºå¤±èª¿?‡è—¥(???)', cqlFile: 'Indicator_03_4_Same_Hospital_Antipsychotic_Overlap_3374.cql' },
+        'indicator-03-5': { check: isAntidepressantDrug, name: '?—æ?é¬±ç??????)', cqlFile: 'Indicator_03_5_Same_Hospital_Antidepressant_Overlap_1728.cql' },
+        'indicator-03-6': { check: isSedativeHypnoticDrug, name: 'å®‰ç??®é??????)', cqlFile: 'Indicator_03_6_Same_Hospital_Sedative_Overlap_1712.cql' },
+        'indicator-03-7': { check: isAntithromboticDrug, name: '?—è??“è—¥(???)', cqlFile: 'Indicator_03_7_Same_Hospital_Antithrombotic_Overlap_3375.cql' },
+        'indicator-03-8': { check: isProstateDrug, name: '?å??ºè—¥(???)', cqlFile: 'Indicator_03_8_Same_Hospital_Prostate_Overlap_3376.cql' },
+        
+        // è·¨é™¢?‡æ? (Cross Hospital) - ?‡æ?ä»?¢¼ 1713-1715, 1729-1731, 3377-3378
+        'indicator-03-9': { check: isAntihypertensiveDrug, name: '?è?å£“è—¥(è·¨é™¢)', cqlFile: 'Indicator_03_9_Cross_Hospital_Antihypertensive_Overlap_1713.cql', crossHospital: true },
+        'indicator-03-10': { check: isLipidLoweringDrug, name: '?è??‚è—¥(è·¨é™¢)', cqlFile: 'Indicator_03_10_Cross_Hospital_Lipid_Lowering_Overlap_1714.cql', crossHospital: true },
+        'indicator-03-11': { check: isAntidiabeticDrug, name: '?è?ç³–è—¥(è·¨é™¢)', cqlFile: 'Indicator_03_11_Cross_Hospital_Antidiabetic_Overlap_1715.cql', crossHospital: true },
+        'indicator-03-12': { check: isAntipsychoticDrug, name: '?—æ€è¦ºå¤±èª¿?‡è—¥(è·¨é™¢)', cqlFile: 'Indicator_03_12_Cross_Hospital_Antipsychotic_Overlap_1729.cql', crossHospital: true },
+        'indicator-03-13': { check: isAntidepressantDrug, name: '?—æ?é¬±ç???è·¨é™¢)', cqlFile: 'Indicator_03_13_Cross_Hospital_Antidepressant_Overlap_1730.cql', crossHospital: true },
+        'indicator-03-14': { check: isSedativeHypnoticDrug, name: 'å®‰ç??®é???è·¨é™¢)', cqlFile: 'Indicator_03_14_Cross_Hospital_Sedative_Overlap_1731.cql', crossHospital: true },
+        'indicator-03-15': { check: isAntithromboticDrug, name: '?—è??“è—¥(è·¨é™¢)', cqlFile: 'Indicator_03_15_Cross_Hospital_Antithrombotic_Overlap_3377.cql', crossHospital: true },
+        'indicator-03-16': { check: isProstateDrug, name: '?å??ºè—¥(è·¨é™¢)', cqlFile: 'Indicator_03_16_Cross_Hospital_Prostate_Overlap_3378.cql', crossHospital: true },
+    };
+    
+    const checker = drugCheckers[indicatorId];
+    if (!checker) {
+        console.warn(`  ? ï? ?ªå¯¦?¾ç??‡æ?: ${indicatorId}`);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    // ?¥è©¢?€è¨ºæ?ä»?
+    const encounters = await conn.query('Encounter', {
+        class: 'AMB',
+        status: 'finished',
+        date: `ge${dateRange.start}&date=le${dateRange.end}`,
+        _count: 2000
+    });
+    
+    if (!encounters.entry || encounters.entry.length === 0) {
+        console.warn(`  ? ï? ${checker.name}?¡é?è¨ºè???(${targetQuarter})`);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    // ?¶é?ç¬¦å?æ¢ä»¶?„è??¹è??„ï?ä¾ç?äº??«é™¢?†ç?ï¼?
+    const prescriptionsByPatientHospital = {};
+    let excludedCount = {agency: 0, wrongDrug: 0};
+    
+    for (const entry of encounters.entry) {
+        const encounter = entry.resource;
+        const encounterId = encounter.id;
+        const patientRef = encounter.subject?.reference;
+        const organizationRef = encounter.serviceProvider?.reference || 'unknown';
+        
+        // CQL?’é™¤: ä»?¾¦æ¡ˆä»¶
+        const isAgency = encounter.type?.some(t => 
+            t.coding?.some(c => c.code === 'AGENCY')
+        );
+        if (isAgency) {
+            excludedCount.agency++;
+            continue;
+        }
+        
+        try {
+            const medications = await conn.query('MedicationRequest', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 50
+            });
+            
+            if (medications.entry && medications.entry.length > 0) {
+                for (const medEntry of medications.entry) {
+                    const med = medEntry.resource;
+                    const codings = med.medicationCodeableConcept?.coding || [];
+                    const drugCode = codings[0]?.code || '';
+                    const atcCode = codings.find(c => c.system === 'http://www.whocc.no/atc')?.code;
+                    
+                    // æª¢æŸ¥?¯å¦ç¬¦å??¥å?é¡åˆ¥
+                    if (!checker.check(atcCode, drugCode)) {
+                        excludedCount.wrongDrug++;
+                        continue;
+                    }
+                    
+                    // ?å?çµ¦è—¥?Ÿé?
+                    const dispenseRequest = med.dispenseRequest;
+                    if (!dispenseRequest || !dispenseRequest.validityPeriod) continue;
+                    
+                    const startDate = new Date(dispenseRequest.validityPeriod.start);
+                    const endDate = dispenseRequest.validityPeriod.end ? 
+                                   new Date(dispenseRequest.validityPeriod.end) : null;
+                    
+                    if (!endDate) {
+                        // å¦‚æ?æ²’æ?çµæ??¥æ?ï¼Œå?è©¦å?çµ¦è—¥å¤©æ•¸è¨ˆç?
+                        const daysSupply = dispenseRequest.expectedSupplyDuration?.value || 28;
+                        endDate = new Date(startDate);
+                        endDate.setDate(endDate.getDate() + daysSupply - 1);
+                    }
+                    
+                    const drugDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                    
+                    // ä¾ç?äº??«é™¢?†ç?
+                    const key = `${patientRef}|${organizationRef}`;
+                    if (!prescriptionsByPatientHospital[key]) {
+                        prescriptionsByPatientHospital[key] = [];
+                    }
+                    
+                    prescriptionsByPatientHospital[key].push({
+                        id: med.id,
+                        startDate,
+                        endDate,
+                        drugDays
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn(`?¥è©¢Encounter ${encounterId}?¨è—¥å¤±æ?:`, error);
+        }
+    }
+    
+    // è¨ˆç??ç?å¤©æ•¸ï¼ˆå?å­ï??Œç¸½çµ¦è—¥å¤©æ•¸ï¼ˆå?æ¯ï?
+    let totalOverlapDays = 0;
+    let totalDrugDays = 0;
+    
+    for (const key in prescriptionsByPatientHospital) {
+        const prescriptions = prescriptionsByPatientHospital[key];
+        
+        // ?†æ?: ?€?‰è??¹ç?çµ¦è—¥å¤©æ•¸ç¸½å?
+        for (const p of prescriptions) {
+            totalDrugDays += p.drugDays;
+        }
+        
+        // ?†å?: è¨ˆç??Œä??…äºº?Œä??«é™¢?„ä??Œè??¹ä??“ç??ç?å¤©æ•¸
+        for (let i = 0; i < prescriptions.length; i++) {
+            for (let j = i + 1; j < prescriptions.length; j++) {
+                const p1 = prescriptions[i];
+                const p2 = prescriptions[j];
+                const overlap = calculateOverlapDays(p1.startDate, p1.endDate, p2.startDate, p2.endDate);
+                totalOverlapDays += overlap;
+            }
+        }
+    }
+    
+    const rate = totalDrugDays > 0 ? 
+        ((totalOverlapDays / totalDrugDays) * 100).toFixed(2) : '0.00';
+    
+    console.log(`    ??${checker.name} - ?ç?å¤©æ•¸: ${totalOverlapDays}, ç¸½çµ¦?¥å¤©?? ${totalDrugDays}, æ¯”ç?: ${rate}%`);
+    console.log(`    ?? CQLä¾†æ?: ${checker.cqlFile || '?ªæ?å®?}`);
+    console.log(`    ?š« ?’é™¤çµ±è? - ä»?¾¦:${excludedCount.agency}, ä¸ç¬¦?¥å?:${excludedCount.wrongDrug}`);
+    
+    return { rate: rate, numerator: totalOverlapDays, denominator: totalDrugDays };
+}
+
+// ?‡æ?05: ?•æ–¹10ç¨®ä»¥ä¸Šè—¥?æ???- ?ºæ–¼CQL Indicator_05_Prescription_10_Plus_Drugs_Rate_3128.cql
+// ?¬å?: ?¥å??é??¸â‰¥10?…æ?ä»¶æ•¸ / çµ¦è—¥æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: ?«é™¢ç¸½é??«ç??è³ªè³‡è?1119\Indicator_05_Prescription_10_Plus_Drugs_Rate_3128.cql
+async function queryPrescription10PlusDrugsRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?•æ–¹10ç¨®ä»¥ä¸Šè—¥?ç?: indicator-05 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_05_Prescription_10_Plus_Drugs_Rate_3128.cql`);
+    
+    try {
+        // ?¥è©¢?€è¨ºçµ¦?¥æ?ä»?
+        const encounters = await conn.query('Encounter', {
+            class: 'AMB',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡é?è¨ºè???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let casesWithMedications = 0;
+        let casesWith10PlusDrugs = 0;
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            // ?¥è©¢è©²æ?ä»¶ç??¥å??•æ–¹
+            const medications = await conn.query('MedicationRequest', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 100
+            });
+            
+            if (medications.entry && medications.entry.length > 0) {
+                // è¨ˆç??¯ä??¥å??é??¸ï??»é?è¤‡ï?
+                const uniqueDrugs = new Set();
+                for (const medEntry of medications.entry) {
+                    const med = medEntry.resource;
+                    if (med.medicationCodeableConcept?.coding?.[0]?.code) {
+                        const drugCode = med.medicationCodeableConcept.coding[0].code;
+                        // æª¢æŸ¥?¯å¦??0ç¢¼é†«ä»¤ä»£ç¢?
+                        if (drugCode.length === 10) {
+                            uniqueDrugs.add(drugCode);
+                        }
+                    }
+                }
+                
+                const drugCount = uniqueDrugs.size;
+                if (drugCount > 0) {
+                    casesWithMedications++;
+                    if (drugCount >= 10) {
+                        casesWith10PlusDrugs++;
+                    }
+                }
+            }
+        }
+        
+        const rate = casesWithMedications > 0 ? 
+            ((casesWith10PlusDrugs / casesWithMedications) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???•æ–¹10ç¨®ä»¥ä¸Šè—¥?ç? - ?†å?: ${casesWith10PlusDrugs}, ?†æ?: ${casesWithMedications}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: casesWith10PlusDrugs, denominator: casesWithMedications };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?06: å°å?æ°???¥è¨º??- ?ºæ–¼CQL Indicator_06_Pediatric_Asthma_ED_Rate_1315Q_1317Y.cql
+// ?¬å?: ? æ°£?˜æ€¥è¨ºäººæ•¸ / 18æ­²ä»¥ä¸‹æ°£?˜ç???ºº??? 100%
+// æ°??è¨ºæ–·: ICD-10-CM J45*
+// CQLä¾†æ?: Indicator_06_Pediatric_Asthma_ED_Rate_1315Q_1317Y.cql
+async function queryPediatricAsthmaEDRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLå°å?æ°???¥è¨º?? indicator-06 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_06_Pediatric_Asthma_ED_Rate_1315Q_1317Y.cql`);
+    
+    try {
+        // ?¥è©¢18æ­²ä»¥ä¸‹æ°£?˜ç????ä¸»è¨º?·J45*ï¼?
+        const asthmaPatients = new Set();
+        const edPatients = new Set();
+        
+        // ?¥è©¢?€è¨ºæ°£?˜æ?ä»?
+        const encounters = await conn.query('Encounter', {
+            class: 'AMB',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (encounters.entry) {
+            for (const entry of encounters.entry) {
+                const encounter = entry.resource;
+                const patientRef = encounter.subject?.reference;
+                
+                // ?¥è©¢è¨ºæ–·
+                const conditions = await conn.query('Condition', {
+                    encounter: `Encounter/${encounter.id}`,
+                    _count: 10
+                });
+                
+                if (conditions.entry) {
+                    for (const condEntry of conditions.entry) {
+                        const condition = condEntry.resource;
+                        const icd10Code = condition.code?.coding?.find(c => 
+                            c.system?.includes('icd-10'))?.code;
+                        
+                        // æª¢æŸ¥?¯å¦?ºæ°£?˜è¨º?·ï?J45*ï¼?
+                        if (icd10Code?.startsWith('J45')) {
+                            asthmaPatients.add(patientRef);
+                            
+                            // æª¢æŸ¥?¯å¦?ºæ€¥è¨º
+                            if (encounter.class?.code === 'EMER') {
+                                edPatients.add(patientRef);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        const totalAsthmaPatients = asthmaPatients.size;
+        const edAsthmaPatients = edPatients.size;
+        const rate = totalAsthmaPatients > 0 ? 
+            ((edAsthmaPatients / totalAsthmaPatients) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??å°å?æ°???¥è¨º??- ?¥è¨ºäººæ•¸: ${edAsthmaPatients}, æ°???…æ‚£: ${totalAsthmaPatients}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: edAsthmaPatients, denominator: totalAsthmaPatients };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?07: ç³–å°¿?…HbA1cæª¢é???- ?ºæ–¼CQL Indicator_07_Diabetes_HbA1c_Testing_Rate_109_01Q_110_01Y.cql
+// ?¬å?: ?‰HbA1cæª¢é?äººæ•¸ / ç³–å°¿?…ä?ä½¿ç”¨ç³–å°¿?…ç”¨?¥ç???•¸ ? 100%
+// ç³–å°¿?…è¨º?? ICD-10-CM E08-E13, ç³–å°¿?…ç”¨?? ATC A10*
+// CQLä¾†æ?: Indicator_07_Diabetes_HbA1c_Testing_Rate_109_01Q_110_01Y.cql
+async function queryDiabetesHbA1cTestingRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLç³–å°¿?…HbA1cæª¢é??? indicator-07 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_07_Diabetes_HbA1c_Testing_Rate_109_01Q_110_01Y.cql`);
+    
+    try {
+        const diabetesPatients = new Set();
+        const patientsWithHbA1c = new Set();
+        
+        // ?¥è©¢?€è¨ºæ?ä»?
+        const encounters = await conn.query('Encounter', {
+            class: 'AMB',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (encounters.entry) {
+            for (const entry of encounters.entry) {
+                const encounter = entry.resource;
+                const patientRef = encounter.subject?.reference;
+                const encounterId = encounter.id;
+                
+                // ?¥è©¢è¨ºæ–·ï¼ˆç?å°¿ç? E08-E13ï¼?
+                const conditions = await conn.query('Condition', {
+                    encounter: `Encounter/${encounterId}`,
+                    _count: 10
+                });
+                
+                let hasDiabetes = false;
+                if (conditions.entry) {
+                    for (const condEntry of conditions.entry) {
+                        const condition = condEntry.resource;
+                        const icd10Code = condition.code?.coding?.find(c => 
+                            c.system?.includes('icd-10'))?.code;
+                        
+                        // æª¢æŸ¥?¯å¦?ºç?å°¿ç?ï¼ˆE08-E13ï¼?
+                        if (icd10Code && (
+                            icd10Code.startsWith('E08') || icd10Code.startsWith('E09') ||
+                            icd10Code.startsWith('E10') || icd10Code.startsWith('E11') ||
+                            icd10Code.startsWith('E13')
+                        )) {
+                            hasDiabetes = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // æª¢æŸ¥?¯å¦ä½¿ç”¨ç³–å°¿?…ç”¨?¥ï?A10*ï¼?
+                if (hasDiabetes) {
+                    const medications = await conn.query('MedicationRequest', {
+                        encounter: `Encounter/${encounterId}`,
+                        status: 'active,completed',
+                        _count: 50
+                    });
+                    
+                    let hasDiabetesDrug = false;
+                    if (medications.entry) {
+                        for (const medEntry of medications.entry) {
+                            const med = medEntry.resource;
+                            const atcCode = med.medicationCodeableConcept?.coding?.find(c =>
+                                c.system?.includes('atc'))?.code;
+                            
+                            if (atcCode?.startsWith('A10')) {
+                                hasDiabetesDrug = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (hasDiabetesDrug) {
+                        diabetesPatients.add(patientRef);
+                        
+                        // ?¥è©¢HbA1cæª¢é?
+                        const observations = await conn.query('Observation', {
+                            patient: patientRef,
+                            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+                            _count: 50
+                        });
+                        
+                        if (observations.entry) {
+                            for (const obsEntry of observations.entry) {
+                                const obs = obsEntry.resource;
+                                const loincCode = obs.code?.coding?.find(c =>
+                                    c.system?.includes('loinc'))?.code;
+                                
+                                // HbA1c LOINC codes: 4548-4, 17856-6, 59261-8
+                                if (loincCode && (
+                                    loincCode === '4548-4' || loincCode === '17856-6' || 
+                                    loincCode === '59261-8'
+                                )) {
+                                    patientsWithHbA1c.add(patientRef);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        const totalDiabetes = diabetesPatients.size;
+        const withHbA1c = patientsWithHbA1c.size;
+        const rate = totalDiabetes > 0 ? 
+            ((withHbA1c / totalDiabetes) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??ç³–å°¿?…HbA1cæª¢é???- ?‰æª¢é©? ${withHbA1c}, ç³–å°¿?…æ‚£?? ${totalDiabetes}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: withHbA1c, denominator: totalDiabetes };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?08: ?Œæ—¥?Œé™¢?Œç–¾?…å?å°±è¨º??- ?ºæ–¼CQL Indicator_08_Same_Day_Same_Disease_Revisit_Rate_1322.cql
+// ?¬å?: ?Œæ—¥?Œé™¢?Œç–¾?…å?å°±è¨ºäººæ•¸ / ?€è¨ºäºº??? 100%
+// ?Œç–¾?? ä¸»è¨º?·å?ä¸‰ç¢¼?¸å?
+// CQLä¾†æ?: Indicator_08_Same_Day_Same_Disease_Revisit_Rate_1322.cql
+async function querySameDaySameDiseaseRevisitRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?Œæ—¥?Œé™¢?Œç–¾?…å?å°±è¨º?? indicator-08 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_08_Same_Day_Same_Disease_Revisit_Rate_1322.cql`);
+    
+    try {
+        const patientDayHospitalVisits = {};
+        const revisitPatients = new Set();
+        const allPatients = new Set();
+        
+        // ?¥è©¢?€è¨ºæ?ä»?
+        const encounters = await conn.query('Encounter', {
+            class: 'AMB',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (encounters.entry) {
+            for (const entry of encounters.entry) {
+                const encounter = entry.resource;
+                const patientRef = encounter.subject?.reference;
+                const hospitalRef = encounter.serviceProvider?.reference || 'unknown';
+                const visitDate = encounter.period?.start?.split('T')[0]; // ?–æ—¥?Ÿéƒ¨??
+                
+                allPatients.add(patientRef);
+                
+                // ?¥è©¢ä¸»è¨º??
+                const conditions = await conn.query('Condition', {
+                    encounter: `Encounter/${encounter.id}`,
+                    _count: 5
+                });
+                
+                if (conditions.entry && conditions.entry.length > 0) {
+                    const primaryCondition = conditions.entry[0].resource;
+                    const icd10Code = primaryCondition.code?.coding?.find(c =>
+                        c.system?.includes('icd-10'))?.code;
+                    
+                    if (icd10Code) {
+                        const icd10Prefix = icd10Code.substring(0, 3); // ?ä?ç¢?
+                        const key = `${patientRef}_${visitDate}_${hospitalRef}_${icd10Prefix}`;
+                        
+                        if (!patientDayHospitalVisits[key]) {
+                            patientDayHospitalVisits[key] = 0;
+                        }
+                        patientDayHospitalVisits[key]++;
+                        
+                        // å¦‚æ??Œæ—¥?Œé™¢?Œç–¾?…æ?2æ¬¡ä»¥ä¸Šå°±è¨?
+                        if (patientDayHospitalVisits[key] >= 2) {
+                            revisitPatients.add(patientRef);
+                        }
+                    }
+                }
+            }
+        }
+        
+        const totalPatients = allPatients.size;
+        const revisitCount = revisitPatients.size;
+        const rate = totalPatients > 0 ? 
+            ((revisitCount / totalPatients) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???Œæ—¥?Œé™¢?Œç–¾?…å?å°±è¨º??- ?å°±è¨ºäºº?? ${revisitCount}, ?€è¨ºäºº?? ${totalPatients}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: revisitCount, denominator: totalPatients };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?¢æ€§ç????ç®‹ä½¿?¨ç? - ?Ÿå¯¦?¥è©¢?ˆï??¯æ?å­?º¦?ƒæ•¸ï¼?
+async function queryChronicPrescriptionRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?Ÿå¯¦?¥è©¢: ?¢æ€§ç????ç®‹ä½¿?¨ç? (${targetQuarter})`);
+    
+    const medications = await conn.query('MedicationRequest', {
+        status: 'active,completed',
+        authoredon: `ge${dateRange.start}&authoredon=le${dateRange.end}`,
+        _count: 2000
+    });
+    
+    if (!medications.entry || medications.entry.length === 0) {
+        console.warn(`  ? ï? ?¡è—¥?è???(${targetQuarter})`);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    let chronicCount = 0;
+    const totalMeds = medications.entry.length;
+    
+    for (const entry of medications.entry) {
+        const med = entry.resource;
+        
+        // æª¢æŸ¥ dosageInstruction ä¸­ç??•æ–¹å¤©æ•¸
+        if (med.dosageInstruction && med.dosageInstruction.length > 0) {
+            for (const dosage of med.dosageInstruction) {
+                const duration = dosage.timing?.repeat?.boundsDuration;
+                
+                if (duration) {
+                    const value = duration.value;
+                    const unit = duration.unit;
+                    
+                    // ?¤æ–·?¯å¦?ºæ…¢?§è??¹ï???8å¤©ï?
+                    if ((unit === 'd' || unit === 'day' || unit === 'days') && value >= 28) {
+                        chronicCount++;
+                        break;
+                    } else if ((unit === 'wk' || unit === 'week' || unit === 'weeks') && value >= 4) {
+                        chronicCount++;
+                        break;
+                    } else if ((unit === 'mo' || unit === 'month' || unit === 'months') && value >= 1) {
+                        chronicCount++;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // æª¢æŸ¥ dispenseRequest.expectedSupplyDuration
+        if (!med.dosageInstruction || med.dosageInstruction.length === 0) {
+            const supplyDuration = med.dispenseRequest?.expectedSupplyDuration;
+            if (supplyDuration) {
+                const value = supplyDuration.value;
+                const unit = supplyDuration.unit;
+                
+                if ((unit === 'd' || unit === 'day' || unit === 'days') && value >= 28) {
+                    chronicCount++;
+                } else if ((unit === 'wk' || unit === 'week' || unit === 'weeks') && value >= 4) {
+                    chronicCount++;
+                } else if ((unit === 'mo' || unit === 'month' || unit === 'months') && value >= 1) {
+                    chronicCount++;
+                }
+            }
+        }
+    }
+    
+    const rate = totalMeds > 0 ? ((chronicCount / totalMeds) * 100).toFixed(2) : '0.00';
+    
+    console.log(`    ?Ÿå¯¦çµæ? - ?†å?: ${chronicCount}, ?†æ?: ${totalMeds}, æ¯”ç?: ${rate}%`);
+    
+    return { rate: rate, numerator: chronicCount, denominator: totalMeds };
+}
+
+// 14å¤©å??¥é™¢??- ?Ÿå¯¦?¥è©¢?ˆï??¯æ?å­?º¦?ƒæ•¸ï¼?
+async function queryReadmissionRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?Ÿå¯¦?¥è©¢: 14å¤©å??¥é™¢??(${targetQuarter})`);
+    
+    const encounters = await conn.query('Encounter', {
+        class: 'IMP',
+        status: 'finished',
+        date: `ge${dateRange.start}&date=le${dateRange.end}`,
+        _count: 2000
+    });
+    
+    if (!encounters.entry || encounters.entry.length === 0) {
+        console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    // ä¾ç?äººå?çµ„ï?è¨˜é?æ¯ä??…äºº?„ä??¢æ—¥??
+    const patientAdmissions = {};
+    
+    for (const entry of encounters.entry) {
+        const enc = entry.resource;
+        const patientRef = enc.subject?.reference;
+        const dischargeDate = enc.period?.end;
+        
+        if (patientRef && dischargeDate) {
+            if (!patientAdmissions[patientRef]) {
+                patientAdmissions[patientRef] = [];
+            }
+            patientAdmissions[patientRef].push(new Date(dischargeDate));
+        }
+    }
+    
+    // çµ±è?14å¤©å…§?å…¥??
+    let readmissionCount = 0;
+    let totalDischarges = 0;
+    
+    for (const patientRef in patientAdmissions) {
+        const dates = patientAdmissions[patientRef].sort((a, b) => a - b);
+        
+        for (let i = 0; i < dates.length - 1; i++) {
+            totalDischarges++;
+            
+            const discharge = dates[i];
+            const nextAdmission = dates[i + 1];
+            const daysBetween = (nextAdmission - discharge) / (1000 * 60 * 60 * 24);
+            
+            if (daysBetween <= 14) {
+                readmissionCount++;
+            }
+        }
+        
+        // ?€å¾Œä?æ¬¡å‡º?¢ä?ç®—å…¥?†æ?
+        if (dates.length > 0) {
+            totalDischarges++;
+        }
+    }
+    
+    if (totalDischarges === 0) {
+        console.warn('  ? ï? ?¡å‡º?¢è???);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    const rate = ((readmissionCount / totalDischarges) * 100).toFixed(2);
+    
+    console.log(`    ?Ÿå¯¦çµæ? - ?†å?: ${readmissionCount}, ?†æ?: ${totalDischarges}, æ¯”ç?: ${rate}%`);
+    
+    return { rate: rate, numerator: readmissionCount, denominator: totalDischarges };
+}
+
+// ?‡æ?10: ä½é™¢æ¡ˆä»¶?ºé™¢å¾Œä??¥ä»¥?§æ€¥è¨º??- ?ºæ–¼CQL Indicator_10_Inpatient_3Day_ED_After_Discharge_108_01.cql
+// ?¬å?: 3?¥å…§?æ€¥è¨ºæ¡ˆä»¶??/ ?ºé™¢æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_10_Inpatient_3Day_ED_After_Discharge_108_01.cql
+async function queryInpatient3DayEDAfterDischargeSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?ºé™¢å¾??¥å…§?¥è¨º?? indicator-10 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_10_Inpatient_3Day_ED_After_Discharge_108_01.cql`);
+    
+    try {
+        // ?¥è©¢ä½é™¢æ¡ˆä»¶
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let dischargeCount = 0;
+        let edWithin3Days = 0;
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const patientRef = encounter.subject?.reference;
+            const dischargeDate = encounter.period?.end;
+            
+            if (!patientRef || !dischargeDate) continue;
+            
+            dischargeCount++;
+            
+            // æª¢æŸ¥?ºé™¢å¾??¥å…§?¯å¦?‰æ€¥è¨º
+            const dischargeDateObj = new Date(dischargeDate);
+            const threeDaysLater = new Date(dischargeDateObj);
+            threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+            
+            // ?¥è©¢è©²ç????¥å…§?„æ€¥è¨ºè¨˜é?
+            const edEncounters = await conn.query('Encounter', {
+                patient: patientRef,
+                class: 'EMER',
+                status: 'finished',
+                date: `ge${dischargeDate.split('T')[0]}&date=le${threeDaysLater.toISOString().split('T')[0]}`,
+                _count: 10
+            });
+            
+            if (edEncounters.entry && edEncounters.entry.length > 0) {
+                edWithin3Days++;
+            }
+        }
+        
+        const rate = dischargeCount > 0 ? 
+            ((edWithin3Days / dischargeCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???ºé™¢å¾??¥å…§?¥è¨º??- 3?¥å…§?¥è¨º: ${edWithin3Days}, ?ºé™¢æ¡ˆä»¶: ${dischargeCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: edWithin3Days, denominator: dischargeCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?11-1: ?–è…¹?¢ç?-?´é? - ?ºæ–¼CQL Indicator_11_1_Overall_Cesarean_Section_Rate_1136_01.cql
+// ?¬å?: ?–è…¹?¢æ?ä»¶æ•¸ / ?Ÿç”¢æ¡ˆä»¶???ªç„¶???–è…¹?? ? 100%
+// CQLä¾†æ?: Indicator_11_1_Overall_Cesarean_Section_Rate_1136_01.cql
+async function queryCesareanSectionOverallRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?–è…¹?¢ç?-?´é?: indicator-11-1 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_11_1_Overall_Cesarean_Section_Rate_1136_01.cql`);
+    
+    try {
+        // ?¥è©¢ä½é™¢?Ÿç”¢æ¡ˆä»¶
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let cesareanCount = 0;
+        let totalDeliveries = 0;
+        
+        // ?–è…¹?¢é†«ä»¤ä»£ç¢?
+        const cesareanCodes = ['81004C', '81005C', '81028C', '81029C', '97009C', '97014C'];
+        // ?ªç„¶?¢é†«ä»¤ä»£ç¢?
+        const vaginalCodes = ['81017C', '81018C', '81019C', '81024C', '81025C', '81026C', '81034C', '97004C', '97005D', '97934C'];
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            // ?¥è©¢?‹è??•ç½®
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            if (procedures.entry) {
+                let isCesarean = false;
+                let isVaginal = false;
+                
+                for (const procEntry of procedures.entry) {
+                    const proc = procEntry.resource;
+                    const procCode = proc.code?.coding?.[0]?.code;
+                    
+                    if (procCode && cesareanCodes.includes(procCode)) {
+                        isCesarean = true;
+                    }
+                    if (procCode && vaginalCodes.includes(procCode)) {
+                        isVaginal = true;
+                    }
+                }
+                
+                if (isCesarean || isVaginal) {
+                    totalDeliveries++;
+                    if (isCesarean) {
+                        cesareanCount++;
+                    }
+                }
+            }
+        }
+        
+        const rate = totalDeliveries > 0 ? 
+            ((cesareanCount / totalDeliveries) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???–è…¹?¢ç?-?´é? - ?–è…¹?? ${cesareanCount}, ç¸½ç??? ${totalDeliveries}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: cesareanCount, denominator: totalDeliveries };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?11-2: ?–è…¹?¢ç?-?ªè?è¦æ? - ?ºæ–¼CQL Indicator_11_2_Cesarean_Section_Rate_Patient_Requested_1137_01.cql
+// ?¬å?: ä¸å…·?©æ??‡ä??–è…¹?¢æ?ä»¶æ•¸ / ?Ÿç”¢æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_11_2_Cesarean_Section_Rate_Patient_Requested_1137_01.cql
+async function queryCesareanSectionPatientRequestedRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?–è…¹?¢ç?-?ªè?è¦æ?: indicator-11-2 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_11_2_Cesarean_Section_Rate_Patient_Requested_1137_01.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let patientRequestedCount = 0;
+        let totalDeliveries = 0;
+        
+        const cesareanCodes = ['81004C', '81005C', '81028C', '81029C', '97009C', '97014C'];
+        const vaginalCodes = ['81017C', '81018C', '81019C', '81024C', '81025C', '81026C', '81034C', '97004C', '97005D', '97934C'];
+        const patientRequestedCode = '97014C'; // ?ªè?è¦æ??–è…¹?¢ç‰¹å®šä»£ç¢?
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            if (procedures.entry) {
+                let isCesarean = false;
+                let isVaginal = false;
+                let isPatientRequested = false;
+                
+                for (const procEntry of procedures.entry) {
+                    const proc = procEntry.resource;
+                    const procCode = proc.code?.coding?.[0]?.code;
+                    
+                    if (procCode && cesareanCodes.includes(procCode)) {
+                        isCesarean = true;
+                    }
+                    if (procCode && vaginalCodes.includes(procCode)) {
+                        isVaginal = true;
+                    }
+                    if (procCode === patientRequestedCode) {
+                        isPatientRequested = true;
+                    }
+                }
+                
+                if (isCesarean || isVaginal) {
+                    totalDeliveries++;
+                    if (isPatientRequested) {
+                        patientRequestedCount++;
+                    }
+                }
+            }
+        }
+        
+        const rate = totalDeliveries > 0 ? 
+            ((patientRequestedCount / totalDeliveries) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???–è…¹?¢ç?-?ªè?è¦æ? - ?ªè?è¦æ?: ${patientRequestedCount}, ç¸½ç??? ${totalDeliveries}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: patientRequestedCount, denominator: totalDeliveries };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?11-3: ?–è…¹?¢ç?-?·é©?‰ç? - ?ºæ–¼CQL Indicator_11_3_Cesarean_Section_Rate_With_Indication_1138_01.cql
+// ?¬å?: ?·é©?‰ç??–è…¹?¢æ?ä»¶æ•¸ / ?Ÿç”¢æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_11_3_Cesarean_Section_Rate_With_Indication_1138_01.cql
+async function queryCesareanSectionWithIndicationRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?–è…¹?¢ç?-?·é©?‰ç?: indicator-11-3 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_11_3_Cesarean_Section_Rate_With_Indication_1138_01.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let withIndicationCount = 0;
+        let totalDeliveries = 0;
+        
+        const cesareanCodes = ['81004C', '81005C', '81028C', '81029C', '97009C', '97014C'];
+        const vaginalCodes = ['81017C', '81018C', '81019C', '81024C', '81025C', '81026C', '81034C', '97004C', '97005D', '97934C'];
+        const patientRequestedCode = '97014C'; // ?’é™¤?ªè?è¦æ?
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            if (procedures.entry) {
+                let isCesarean = false;
+                let isVaginal = false;
+                let isPatientRequested = false;
+                
+                for (const procEntry of procedures.entry) {
+                    const proc = procEntry.resource;
+                    const procCode = proc.code?.coding?.[0]?.code;
+                    
+                    if (procCode && cesareanCodes.includes(procCode)) {
+                        isCesarean = true;
+                    }
+                    if (procCode && vaginalCodes.includes(procCode)) {
+                        isVaginal = true;
+                    }
+                    if (procCode === patientRequestedCode) {
+                        isPatientRequested = true;
+                    }
+                }
+                
+                if (isCesarean || isVaginal) {
+                    totalDeliveries++;
+                    if (isCesarean && !isPatientRequested) {
+                        withIndicationCount++;
+                    }
+                }
+            }
+        }
+        
+        const rate = totalDeliveries > 0 ? 
+            ((withIndicationCount / totalDeliveries) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???–è…¹?¢ç?-?·é©?‰ç? - ?·é©?‰ç?: ${withIndicationCount}, ç¸½ç??? ${totalDeliveries}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: withIndicationCount, denominator: totalDeliveries };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?11-4: ?–è…¹?¢ç?-?æ¬¡?·é©?‰ç? - ?ºæ–¼CQL Indicator_11_4_Cesarean_Section_Rate_First_Time_1075_01.cql
+// ?¬å?: ?æ¬¡?è‡ªé¡˜å??¹ç”¢æ¡ˆä»¶??/ ?Ÿç”¢æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_11_4_Cesarean_Section_Rate_First_Time_1075_01.cql
+async function queryCesareanSectionFirstTimeRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?–è…¹?¢ç?-?æ¬¡?·é©?‰ç?: indicator-11-4 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_11_4_Cesarean_Section_Rate_First_Time_1075_01.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let firstTimeCesareanCount = 0;
+        let totalDeliveries = 0;
+        
+        const firstTimeCesareanCodes = ['81004C', '81028C']; // ?æ¬¡?–è…¹?¢ä»£ç¢?
+        const cesareanCodes = ['81004C', '81005C', '81028C', '81029C', '97009C', '97014C'];
+        const vaginalCodes = ['81017C', '81018C', '81019C', '81024C', '81025C', '81026C', '81034C', '97004C', '97005D', '97934C'];
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            if (procedures.entry) {
+                let isCesarean = false;
+                let isVaginal = false;
+                let isFirstTime = false;
+                
+                for (const procEntry of procedures.entry) {
+                    const proc = procEntry.resource;
+                    const procCode = proc.code?.coding?.[0]?.code;
+                    
+                    if (procCode && cesareanCodes.includes(procCode)) {
+                        isCesarean = true;
+                    }
+                    if (procCode && vaginalCodes.includes(procCode)) {
+                        isVaginal = true;
+                    }
+                    if (procCode && firstTimeCesareanCodes.includes(procCode)) {
+                        isFirstTime = true;
+                    }
+                }
+                
+                if (isCesarean || isVaginal) {
+                    totalDeliveries++;
+                    if (isFirstTime) {
+                        firstTimeCesareanCount++;
+                    }
+                }
+            }
+        }
+        
+        const rate = totalDeliveries > 0 ? 
+            ((firstTimeCesareanCount / totalDeliveries) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???–è…¹?¢ç?-?æ¬¡?·é©?‰ç? - ?æ¬¡?–è…¹?? ${firstTimeCesareanCount}, ç¸½ç??? ${totalDeliveries}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: firstTimeCesareanCount, denominator: totalDeliveries };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?12: æ¸…æ·¨?‹è?è¡“å?ä½¿ç”¨?—ç?ç´ è??ä??¥æ???- ?ºæ–¼CQL Indicator_12_Clean_Surgery_Antibiotic_Over_3Days_Rate_1155.cql
+// ?¬å?: ?‹è?å¾?3?¥ä½¿?¨æ??Ÿç?æ¡ˆä»¶??/ æ¸…æ·¨?‹è?æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_12_Clean_Surgery_Antibiotic_Over_3Days_Rate_1155.cql
+async function queryCleanSurgeryAntibioticOver3DaysRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLæ¸…æ·¨?‹è?è¡“å??—ç?ç´?3?¥æ??? indicator-12 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_12_Clean_Surgery_Antibiotic_Over_3Days_Rate_1155.cql`);
+    
+    try {
+        // ?¥è©¢ä½é™¢?‹è?æ¡ˆä»¶
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let cleanSurgeryCount = 0;
+        let over3DaysAntibioticCount = 0;
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            // ?¥è©¢?‹è?è¨˜é?ï¼ˆæ?æ·¨æ?è¡“ï?
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            if (!procedures.entry || procedures.entry.length === 0) continue;
+            
+            // ç°¡å??¤å?ï¼šæ??‹è??„æ?ä»¶è??ºæ?æ·¨æ?è¡?
+            cleanSurgeryCount++;
+            
+            // ?¥è©¢è¡“å??—ç?ç´ ä½¿??
+            const medications = await conn.query('MedicationRequest', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 50
+            });
+            
+            if (medications.entry) {
+                let antibioticDays = 0;
+                
+                for (const medEntry of medications.entry) {
+                    const med = medEntry.resource;
+                    const atcCode = med.medicationCodeableConcept?.coding?.find(c =>
+                        c.system?.includes('atc'))?.code;
+                    
+                    // ATC J01* ?ºæ??Ÿç?
+                    if (atcCode?.startsWith('J01')) {
+                        // è¨ˆç??¨è—¥å¤©æ•¸
+                        if (med.dosageInstruction && med.dosageInstruction[0]?.timing?.repeat?.boundsDuration?.value) {
+                            antibioticDays += med.dosageInstruction[0].timing.repeat.boundsDuration.value;
+                        } else {
+                            antibioticDays += 1; // ?è¨­1å¤?
+                        }
+                    }
+                }
+                
+                if (antibioticDays > 3) {
+                    over3DaysAntibioticCount++;
+                }
+            }
+        }
+        
+        const rate = cleanSurgeryCount > 0 ? 
+            ((over3DaysAntibioticCount / cleanSurgeryCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??æ¸…æ·¨?‹è??—ç?ç´?3?¥æ???- >3?¥æ?ä»? ${over3DaysAntibioticCount}, æ¸…æ·¨?‹è?: ${cleanSurgeryCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: over3DaysAntibioticCount, denominator: cleanSurgeryCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?13: ?¥å?é«”å??‡æ³¢ç¢çŸ³è¡?ESWL)?…äººå¹³å??©ç”¨æ¬¡æ•¸ - ?ºæ–¼CQL Indicator_13_Average_ESWL_Utilization_Times_20_01Q_1804Y.cql
+// ?¬å?: ESWLç¸½æ¬¡??/ ?¥å?ESWL?…äºº??
+// CQLä¾†æ?: Indicator_13_Average_ESWL_Utilization_Times_20_01Q_1804Y.cql
+async function queryESWLAverageUtilizationTimesSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLé«”å??‡æ³¢ç¢çŸ³è¡“å¹³?‡åˆ©?¨æ¬¡?? indicator-13 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_13_Average_ESWL_Utilization_Times_20_01Q_1804Y.cql`);
+    
+    try {
+        // ?¥è©¢?€?‰ESWL?•ç½®è¨˜é?
+        const procedures = await conn.query('Procedure', {
+            status: 'active,completed',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!procedures.entry || procedures.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ESWL?•ç½®è³‡æ? (${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        const eswlPatients = new Set();
+        let eswlTotalCount = 0;
+        
+        // ESWL?¸é?SNOMED/ICD-10-PCSä»?¢¼
+        const eswlCodes = ['80146002', '0TF00ZZ', '0TF10ZZ', '0TF20ZZ']; // ç¤ºä?ä»?¢¼
+        
+        for (const entry of procedures.entry) {
+            const proc = entry.resource;
+            const procCode = proc.code?.coding?.[0]?.code;
+            const patientRef = proc.subject?.reference;
+            
+            // æª¢æŸ¥?¯å¦?ºESWL
+            if (procCode && eswlCodes.includes(procCode)) {
+                eswlTotalCount++;
+                if (patientRef) {
+                    eswlPatients.add(patientRef);
+                }
+            }
+        }
+        
+        const patientCount = eswlPatients.size;
+        const avgTimes = patientCount > 0 ? 
+            (eswlTotalCount / patientCount).toFixed(2) : '0.00';
+        
+        console.log(`    ??ESWLå¹³å??©ç”¨æ¬¡æ•¸ - ç¸½æ¬¡?? ${eswlTotalCount}, ?…äºº?? ${patientCount}, å¹³å?: ${avgTimes}æ¬¡`);
+        
+        return { rate: avgTimes, numerator: eswlTotalCount, denominator: patientCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?14: å­å®®?Œç˜¤?‹è??ºé™¢å¾?4?¥å…§? ç›¸?œè¨º?·å?ä½é™¢??- ?ºæ–¼CQL Indicator_14_Uterine_Fibroid_Surgery_14Day_Readmission_473_01.cql
+// ?¬å?: 14?¥å…§? ç›¸?œè¨º?·å?ä½é™¢æ¬¡æ•¸ / å­å®®?Œç˜¤?‹è?ä½é™¢äººæ¬¡??? 100%
+// CQLä¾†æ?: Indicator_14_Uterine_Fibroid_Surgery_14Day_Readmission_473_01.cql
+async function queryUterineFibroidSurgery14DayReadmissionSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLå­å®®?Œç˜¤?‹è?14?¥å?ä½é™¢?? indicator-14 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_14_Uterine_Fibroid_Surgery_14Day_Readmission_473_01.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let fibroidSurgeryCount = 0;
+        let readmissionCount = 0;
+        
+        // å­å®®?Œç˜¤?˜é™¤è¡“é†«ä»¤ä»£ç¢?
+        const myomectomyCodes = ['97010K', '97011A', '97012B', '97013B', '80402C', '80420C', '80415B', '97013C', '80415C', '80425C'];
+        // å­å®®?‡é™¤è¡“é†«ä»¤ä»£ç¢?
+        const hysterectomyCodes = ['97025K', '97026A', '97027B', '97020K', '97021A', '97022B', '97035K', '97036A', '97037B', '80403B', '80404B', '80421B', '80416B', '80412B', '97027C', '80404C'];
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            const patientRef = encounter.subject?.reference;
+            const dischargeDate = encounter.period?.end;
+            
+            // æª¢æŸ¥å­å®®?Œç˜¤è¨ºæ–·ï¼ˆICD-10-CM D25*ï¼?
+            const conditions = await conn.query('Condition', {
+                encounter: `Encounter/${encounterId}`,
+                _count: 10
+            });
+            
+            let hasFibroid = false;
+            if (conditions.entry) {
+                for (const condEntry of conditions.entry) {
+                    const condition = condEntry.resource;
+                    const icd10Code = condition.code?.coding?.find(c => 
+                        c.system?.includes('icd-10'))?.code;
+                    
+                    if (icd10Code?.startsWith('D25')) {
+                        hasFibroid = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!hasFibroid) continue;
+            
+            // æª¢æŸ¥å­å®®?‹è?
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            let hasSurgery = false;
+            if (procedures.entry) {
+                for (const procEntry of procedures.entry) {
+                    const proc = procEntry.resource;
+                    const procCode = proc.code?.coding?.[0]?.code;
+                    
+                    if (procCode && (myomectomyCodes.includes(procCode) || hysterectomyCodes.includes(procCode))) {
+                        hasSurgery = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasSurgery) {
+                fibroidSurgeryCount++;
+                
+                // æª¢æŸ¥14?¥å…§?ä??¢ï??¸é?è¨ºæ–·N70-N85ï¼?
+                if (dischargeDate && patientRef) {
+                    const dischargeDateObj = new Date(dischargeDate);
+                    const fourteenDaysLater = new Date(dischargeDateObj);
+                    fourteenDaysLater.setDate(fourteenDaysLater.getDate() + 14);
+                    
+                    const readmissions = await conn.query('Encounter', {
+                        patient: patientRef,
+                        class: 'IMP',
+                        status: 'finished',
+                        date: `ge${dischargeDate.split('T')[0]}&date=le${fourteenDaysLater.toISOString().split('T')[0]}`,
+                        _count: 10
+                    });
+                    
+                    if (readmissions.entry) {
+                        for (const readmitEntry of readmissions.entry) {
+                            if (readmitEntry.resource.id === encounterId) continue;
+                            
+                            // æª¢æŸ¥?¸é?è¨ºæ–·ï¼ˆN70-N85ï¼?
+                            const readmitConditions = await conn.query('Condition', {
+                                encounter: `Encounter/${readmitEntry.resource.id}`,
+                                _count: 10
+                            });
+                            
+                            if (readmitConditions.entry) {
+                                for (const condEntry of readmitConditions.entry) {
+                                    const condition = condEntry.resource;
+                                    const icd10Code = condition.code?.coding?.find(c => 
+                                        c.system?.includes('icd-10'))?.code;
+                                    
+                                    if (icd10Code) {
+                                        const prefix = icd10Code.substring(0, 3);
+                                        // N70-N85ç¯„å?æª¢æŸ¥
+                                        if (prefix >= 'N70' && prefix <= 'N85') {
+                                            readmissionCount++;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        const rate = fibroidSurgeryCount > 0 ? 
+            ((readmissionCount / fibroidSurgeryCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??å­å®®?Œç˜¤?‹è?14?¥å?ä½é™¢??- ?ä??? ${readmissionCount}, ?‹è?äººæ¬¡: ${fibroidSurgeryCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: readmissionCount, denominator: fibroidSurgeryCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?15-1: äººå·¥?é?ç¯€ç½®æ??‹è?å¾?0?¥å…§ç½®æ??©æ·±?¨æ??“ç? - ?ºæ–¼CQL Indicator_15_1_Knee_Arthroplasty_90Day_Deep_Infection_353_01.cql
+// ?¬å?: 90?¥å…§ç½®æ??©æ·±?¨æ??“æ?ä»¶æ•¸ / äººå·¥?é?ç¯€ç½®æ??·è?æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_15_1_Knee_Arthroplasty_90Day_Deep_Infection_353_01.cql
+async function queryKneeArthroplasty90DayDeepInfectionSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLäººå·¥?é?ç¯€ç½®æ?90?¥æ??“ç?: indicator-15-1 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_15_1_Knee_Arthroplasty_90Day_Deep_Infection_353_01.cql`);
+    
+    try {
+        const procedures = await conn.query('Procedure', {
+            status: 'active,completed',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!procedures.entry || procedures.entry.length === 0) {
+            console.warn(`  ? ï? ?¡æ?è¡“è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let tkaCount = 0;
+        let infectionCount = 0;
+        
+        // äººå·¥?é?ç¯€ç½®æ?è¡“ä»£ç¢¼ï??¨äººå·??Šäººå·¥ï?
+        const tkaCodes = ['64164B', '97805K', '97806A', '97807B', '64169B'];
+        // ç½®æ??©æ·±?¨æ??“ä»£ç¢?
+        const infectionCodes = ['64053B', '64198B'];
+        
+        for (const entry of procedures.entry) {
+            const proc = entry.resource;
+            const procCode = proc.code?.coding?.[0]?.code;
+            const patientRef = proc.subject?.reference;
+            const procDate = proc.performedDateTime || proc.performedPeriod?.start;
+            
+            if (procCode && tkaCodes.includes(procCode)) {
+                tkaCount++;
+                
+                // æª¢æŸ¥90?¥å…§?¯å¦?‰æ???
+                if (procDate && patientRef) {
+                    const procDateObj = new Date(procDate);
+                    const ninetyDaysLater = new Date(procDateObj);
+                    ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
+                    
+                    const infectionProcs = await conn.query('Procedure', {
+                        patient: patientRef,
+                        status: 'active,completed',
+                        date: `ge${procDate.split('T')[0]}&date=le${ninetyDaysLater.toISOString().split('T')[0]}`,
+                        _count: 20
+                    });
+                    
+                    if (infectionProcs.entry) {
+                        for (const infEntry of infectionProcs.entry) {
+                            const infProc = infEntry.resource;
+                            const infCode = infProc.code?.coding?.[0]?.code;
+                            const infDate = infProc.performedDateTime || infProc.performedPeriod?.start;
+                            
+                            // æª¢æŸ¥?¯å¦?ºæ??“ç›¸?œæ?è¡?
+                            if (infCode && infectionCodes.includes(infCode)) {
+                                // ?’é™¤?Œæ—¥?³å ±64198B
+                                const isSameDay = procDate.split('T')[0] === infDate?.split('T')[0];
+                                if (!(isSameDay && infCode === '64198B')) {
+                                    infectionCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        const rate = tkaCount > 0 ? 
+            ((infectionCount / tkaCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??äººå·¥?é?ç¯€90?¥æ??“ç? - ?Ÿæ?æ¡ˆä»¶: ${infectionCount}, TKAæ¡ˆä»¶: ${tkaCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: infectionCount, denominator: tkaCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?15-2: ?¨äººå·¥è??œç?ç½®æ??‹è?å¾?0?¥å…§?Ÿæ???- ?ºæ–¼CQL Indicator_15_2_Total_Knee_Arthroplasty_90Day_Deep_Infection_3249.cql
+// ?¬å?: 90?¥å…§?Ÿæ?æ¡ˆä»¶??/ ?¨äººå·¥è??œç?ç½®æ?æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_15_2_Total_Knee_Arthroplasty_90Day_Deep_Infection_3249.cql
+async function queryTotalKneeArthroplasty90DayInfectionSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?¨äººå·¥è??œç?90?¥æ??“ç?: indicator-15-2 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_15_2_Total_Knee_Arthroplasty_90Day_Deep_Infection_3249.cql`);
+    
+    try {
+        const procedures = await conn.query('Procedure', {
+            status: 'active,completed',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!procedures.entry || procedures.entry.length === 0) {
+            console.warn(`  ? ï? ?¡æ?è¡“è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let totalTkaCount = 0;
+        let infectionCount = 0;
+        
+        // ?¨äººå·¥è??œç?ç½®æ?è¡“ä»£ç¢?
+        const totalTkaCodes = ['64164B', '97805K', '97806A', '97807B', '64169B'];
+        const infectionCodes = ['64053B', '64198B'];
+        
+        for (const entry of procedures.entry) {
+            const proc = entry.resource;
+            const procCode = proc.code?.coding?.[0]?.code;
+            const patientRef = proc.subject?.reference;
+            const procDate = proc.performedDateTime || proc.performedPeriod?.start;
+            
+            if (procCode && totalTkaCodes.includes(procCode)) {
+                totalTkaCount++;
+                
+                if (procDate && patientRef) {
+                    const procDateObj = new Date(procDate);
+                    const ninetyDaysLater = new Date(procDateObj);
+                    ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
+                    
+                    const infectionProcs = await conn.query('Procedure', {
+                        patient: patientRef,
+                        status: 'active,completed',
+                        date: `ge${procDate.split('T')[0]}&date=le${ninetyDaysLater.toISOString().split('T')[0]}`,
+                        _count: 20
+                    });
+                    
+                    if (infectionProcs.entry) {
+                        for (const infEntry of infectionProcs.entry) {
+                            const infProc = infEntry.resource;
+                            const infCode = infProc.code?.coding?.[0]?.code;
+                            const infDate = infProc.performedDateTime || infProc.performedPeriod?.start;
+                            
+                            if (infCode && infectionCodes.includes(infCode)) {
+                                const isSameDay = procDate.split('T')[0] === infDate?.split('T')[0];
+                                if (!(isSameDay && infCode === '64198B')) {
+                                    infectionCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        const rate = totalTkaCount > 0 ? 
+            ((infectionCount / totalTkaCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???¨äººå·¥è??œç?90?¥æ??“ç? - ?Ÿæ?: ${infectionCount}, ?¨TKA: ${totalTkaCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: infectionCount, denominator: totalTkaCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?15-3: ?Šäººå·¥è??œç?ç½®æ??‹è?å¾?0?¥å…§?Ÿæ???- ?ºæ–¼CQL Indicator_15_3_Partial_Knee_Arthroplasty_90Day_Deep_Infection_3250.cql
+// ?¬å?: 90?¥å…§?Ÿæ?æ¡ˆä»¶??/ ?Šäººå·¥è??œç?ç½®æ?æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_15_3_Partial_Knee_Arthroplasty_90Day_Deep_Infection_3250.cql
+async function queryPartialKneeArthroplasty90DayInfectionSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?Šäººå·¥è??œç?90?¥æ??“ç?: indicator-15-3 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_15_3_Partial_Knee_Arthroplasty_90Day_Deep_Infection_3250.cql`);
+    
+    try {
+        const procedures = await conn.query('Procedure', {
+            status: 'active,completed',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!procedures.entry || procedures.entry.length === 0) {
+            console.warn(`  ? ï? ?¡æ?è¡“è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let partialTkaCount = 0;
+        let infectionCount = 0;
+        
+        // ?Šäººå·¥è??œç?ç½®æ?è¡“ä»£ç¢?
+        const partialTkaCodes = ['64169B'];
+        const infectionCodes = ['64053B', '64198B'];
+        
+        for (const entry of procedures.entry) {
+            const proc = entry.resource;
+            const procCode = proc.code?.coding?.[0]?.code;
+            const patientRef = proc.subject?.reference;
+            const procDate = proc.performedDateTime || proc.performedPeriod?.start;
+            
+            if (procCode && partialTkaCodes.includes(procCode)) {
+                partialTkaCount++;
+                
+                if (procDate && patientRef) {
+                    const procDateObj = new Date(procDate);
+                    const ninetyDaysLater = new Date(procDateObj);
+                    ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
+                    
+                    const infectionProcs = await conn.query('Procedure', {
+                        patient: patientRef,
+                        status: 'active,completed',
+                        date: `ge${procDate.split('T')[0]}&date=le${ninetyDaysLater.toISOString().split('T')[0]}`,
+                        _count: 20
+                    });
+                    
+                    if (infectionProcs.entry) {
+                        for (const infEntry of infectionProcs.entry) {
+                            const infProc = infEntry.resource;
+                            const infCode = infProc.code?.coding?.[0]?.code;
+                            const infDate = infProc.performedDateTime || infProc.performedPeriod?.start;
+                            
+                            if (infCode && infectionCodes.includes(infCode)) {
+                                const isSameDay = procDate.split('T')[0] === infDate?.split('T')[0];
+                                if (!(isSameDay && infCode === '64198B')) {
+                                    infectionCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        const rate = partialTkaCount > 0 ? 
+            ((infectionCount / partialTkaCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???Šäººå·¥è??œç?90?¥æ??“ç? - ?Ÿæ?: ${infectionCount}, ?ŠTKA: ${partialTkaCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: infectionCount, denominator: partialTkaCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?16: ä½é™¢?‹è??·å£?Ÿæ???- ?ºæ–¼CQL Indicator_16_Inpatient_Surgical_Wound_Infection_Rate_1658Q_1666Y.cql
+// ?¬å?: ?‹è??·å£?Ÿæ?æ¡ˆä»¶??/ ä½é™¢?‹è?æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_16_Inpatient_Surgical_Wound_Infection_Rate_1658Q_1666Y.cql
+async function queryInpatientSurgicalWoundInfectionRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLä½é™¢?‹è??·å£?Ÿæ??? indicator-16 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_16_Inpatient_Surgical_Wound_Infection_Rate_1658Q_1666Y.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let surgeryCount = 0;
+        let infectionCount = 0;
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            // æª¢æŸ¥?¯å¦?‰æ?è¡?
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            if (procedures.entry && procedures.entry.length > 0) {
+                surgeryCount++;
+                
+                // æª¢æŸ¥?·å£?Ÿæ?è¨ºæ–·ï¼ˆICD-10-CMè¡“å?ä¸¦ç™¼?‡ä»£ç¢¼ï?
+                const conditions = await conn.query('Condition', {
+                    encounter: `Encounter/${encounterId}`,
+                    _count: 10
+                });
+                
+                if (conditions.entry) {
+                    for (const condEntry of conditions.entry) {
+                        const condition = condEntry.resource;
+                        const icd10Code = condition.code?.coding?.find(c => 
+                            c.system?.includes('icd-10'))?.code;
+                        
+                        // æª¢æŸ¥è¡“å??Ÿæ??¸é?è¨ºæ–·ä»?¢¼
+                        if (icd10Code && (
+                            icd10Code.startsWith('T81') ||  // ?‹è?å¾Œä¸¦?¼ç?
+                            icd10Code.startsWith('T82') ||  // å¿ƒè?ç®¡è?ç½®ä¸¦?¼ç?
+                            icd10Code.startsWith('T83') ||  // æ³Œå°¿?Ÿæ?è£ç½®ä¸¦ç™¼??
+                            icd10Code.startsWith('T84') ||  // éª¨ç?è£ç½®ä¸¦ç™¼??
+                            icd10Code.startsWith('T85')     // ?¶ä?è£ç½®ä¸¦ç™¼??
+                        )) {
+                            infectionCount++;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        const rate = surgeryCount > 0 ? 
+            ((infectionCount / surgeryCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??ä½é™¢?‹è??·å£?Ÿæ???- ?Ÿæ?: ${infectionCount}, ?‹è?æ¡ˆä»¶: ${surgeryCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: infectionCount, denominator: surgeryCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?17: ?¥æ€§å??Œæ?å¡æ­»äº¡ç? - ?ºæ–¼CQL Indicator_17_Acute_Myocardial_Infarction_Mortality_Rate_1662Q_1668Y.cql
+// ?¬å?: ?¥æ€§å??Œæ?å¡æ­»äº¡äºº??/ ?¥æ€§å??Œæ?å¡ç???•¸ ? 100%
+// CQLä¾†æ?: Indicator_17_Acute_Myocardial_Infarction_Mortality_Rate_1662Q_1668Y.cql
+async function queryAcuteMyocardialInfarctionMortalityRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQL?¥æ€§å??Œæ?å¡æ­»äº¡ç?: indicator-17 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_17_Acute_Myocardial_Infarction_Mortality_Rate_1662Q_1668Y.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡å°±è¨ºè???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let amiPatients = 0;
+        let amiDeaths = 0;
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            // æª¢æŸ¥?¥æ€§å??Œæ?å¡è¨º?·ï?ä¸»è¨º?·ICD-10-CM I21*, I22*ï¼?
+            const conditions = await conn.query('Condition', {
+                encounter: `Encounter/${encounterId}`,
+                _count: 10
+            });
+            
+            let hasAMI = false;
+            if (conditions.entry && conditions.entry.length > 0) {
+                const primaryCondition = conditions.entry[0].resource;
+                const icd10Code = primaryCondition.code?.coding?.find(c => 
+                    c.system?.includes('icd-10'))?.code;
+                
+                if (icd10Code && (icd10Code.startsWith('I21') || icd10Code.startsWith('I22'))) {
+                    hasAMI = true;
+                }
+            }
+            
+            if (hasAMI) {
+                amiPatients++;
+                
+                // æª¢æŸ¥?¯å¦æ­»äº¡ï¼ˆè?æ­¸ä»£ç¢??–Aï¼?
+                if (encounter.hospitalization?.dischargeDisposition?.coding) {
+                    const disposition = encounter.hospitalization.dischargeDisposition.coding[0]?.code;
+                    if (disposition === '4' || disposition === 'A') {
+                        amiDeaths++;
+                    }
+                }
+            }
+        }
+        
+        const rate = amiPatients > 0 ? 
+            ((amiDeaths / amiPatients) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ???¥æ€§å??Œæ?å¡æ­»äº¡ç? - æ­»äº¡: ${amiDeaths}, AMI?…æ‚£: ${amiPatients}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: amiDeaths, denominator: amiPatients };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?18: å¤±æ™º?…ä½¿?¨å?å¯§ç·©?Œæ??™ä½¿?¨ç? - ?ºæ–¼CQL Indicator_18_Dementia_Hospice_Care_Utilization_Rate_2795Q_2796Y.cql
+// ?¬å?: å¤±æ™º?‡ç?äººä½¿?¨å?å¯§ç…§è­·äºº??/ å¤±æ™º?‡ç?äººæ•¸ ? 100%
+// CQLä¾†æ?: Indicator_18_Dementia_Hospice_Care_Utilization_Rate_2795Q_2796Y.cql
+async function queryDementiaHospiceCareUtilizationRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLå¤±æ™º?…å?å¯§æ??™ä½¿?¨ç?: indicator-18 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_18_Dementia_Hospice_Care_Utilization_Rate_2795Q_2796Y.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡å°±è¨ºè???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        const dementiaPatients = new Set();
+        const hospicePatients = new Set();
+        
+        // å®‰å¯§?§è­·?«ä»¤ä»?¢¼
+        const hospiceCodes = ['05601K', '05602A', '05603B', 'P4401B', 'P4402B', 'P4403B', '05312C', '05316C', '05323C', '05327C', '05336C', '05341C', '05362C', '05374C'];
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            const patientRef = encounter.subject?.reference;
+            
+            // æª¢æŸ¥å¤±æ™º?‡è¨º?·ï?F01-F03, G30, G31, F1027ç­‰ï?
+            const conditions = await conn.query('Condition', {
+                encounter: `Encounter/${encounterId}`,
+                _count: 10
+            });
+            
+            let hasDementia = false;
+            if (conditions.entry) {
+                for (const condEntry of conditions.entry) {
+                    const condition = condEntry.resource;
+                    const icd10Code = condition.code?.coding?.find(c => 
+                        c.system?.includes('icd-10'))?.code;
+                    
+                    if (icd10Code && (
+                        icd10Code.startsWith('F01') || icd10Code.startsWith('F02') || icd10Code.startsWith('F03') ||
+                        icd10Code.startsWith('G30') || icd10Code.startsWith('G31') ||
+                        icd10Code === 'F1027' || icd10Code === 'F1097' || icd10Code === 'F1327' ||
+                        icd10Code === 'F1397' || icd10Code === 'F1827' || icd10Code === 'F1897' ||
+                        icd10Code === 'F1927' || icd10Code === 'F1997'
+                    )) {
+                        hasDementia = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasDementia && patientRef) {
+                dementiaPatients.add(patientRef);
+                
+                // æª¢æŸ¥?¯å¦ä½¿ç”¨å®‰å¯§?§è­·
+                const procedures = await conn.query('Procedure', {
+                    encounter: `Encounter/${encounterId}`,
+                    status: 'active,completed',
+                    _count: 20
+                });
+                
+                if (procedures.entry) {
+                    for (const procEntry of procedures.entry) {
+                        const proc = procEntry.resource;
+                        const procCode = proc.code?.coding?.[0]?.code;
+                        
+                        if (procCode && hospiceCodes.includes(procCode)) {
+                            hospicePatients.add(patientRef);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        const totalDementia = dementiaPatients.size;
+        const withHospice = hospicePatients.size;
+        const rate = totalDementia > 0 ? 
+            ((withHospice / totalDementia) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??å¤±æ™º?…å?å¯§æ??™ä½¿?¨ç? - ä½¿ç”¨å®‰å¯§: ${withHospice}, å¤±æ™º?…æ‚£: ${totalDementia}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: withHospice, denominator: totalDementia };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?‡æ?19: æ¸…æ·¨?‹è?è¡“å??·å£?Ÿæ???- ?ºæ–¼CQL Indicator_19_Clean_Surgery_Wound_Infection_Rate_2524Q_2526Y.cql
+// ?¬å?: æ¸…æ·¨?‹è?è¡“å??·å£?Ÿæ?æ¡ˆä»¶??/ æ¸…æ·¨?‹è?æ¡ˆä»¶??? 100%
+// CQLä¾†æ?: Indicator_19_Clean_Surgery_Wound_Infection_Rate_2524Q_2526Y.cql
+async function queryCleanSurgeryWoundInfectionRateSample(conn, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?? CQLæ¸…æ·¨?‹è??·å£?Ÿæ??? indicator-19 (${targetQuarter})`);
+    console.log(`  ?? CQLä¾†æ?: Indicator_19_Clean_Surgery_Wound_Infection_Rate_2524Q_2526Y.cql`);
+    
+    try {
+        const encounters = await conn.query('Encounter', {
+            class: 'IMP',
+            status: 'finished',
+            date: `ge${dateRange.start}&date=le${dateRange.end}`,
+            _count: 2000
+        });
+        
+        if (!encounters.entry || encounters.entry.length === 0) {
+            console.warn(`  ? ï? ?¡ä??¢è???(${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
+        
+        let cleanSurgeryCount = 0;
+        let infectionCount = 0;
+        
+        // æ¸…æ·¨?‹è??«ä»¤ä»?¢¼
+        const cleanSurgeryCodes = ['75607C', '75610B', '75613C', '75614C', '75615C', '88029C'];
+        
+        for (const entry of encounters.entry) {
+            const encounter = entry.resource;
+            const encounterId = encounter.id;
+            
+            // æª¢æŸ¥æ¸…æ·¨?‹è?
+            const procedures = await conn.query('Procedure', {
+                encounter: `Encounter/${encounterId}`,
+                status: 'active,completed',
+                _count: 20
+            });
+            
+            let hasCleanSurgery = false;
+            if (procedures.entry) {
+                for (const procEntry of procedures.entry) {
+                    const proc = procEntry.resource;
+                    const procCode = proc.code?.coding?.[0]?.code;
+                    
+                    if (procCode && cleanSurgeryCodes.includes(procCode)) {
+                        hasCleanSurgery = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasCleanSurgery) {
+                cleanSurgeryCount++;
+                
+                // æª¢æŸ¥?·å£?Ÿæ?è¨ºæ–·
+                const conditions = await conn.query('Condition', {
+                    encounter: `Encounter/${encounterId}`,
+                    _count: 10
+                });
+                
+                if (conditions.entry) {
+                    for (const condEntry of conditions.entry) {
+                        const condition = condEntry.resource;
+                        const icd10Code = condition.code?.coding?.find(c => 
+                            c.system?.includes('icd-10'))?.code;
+                        
+                        // ?‹è??·å£?Ÿæ??¸é?è¨ºæ–·
+                        if (icd10Code && (
+                            icd10Code.startsWith('T81.4') ||  // ?‹è??·å£?Ÿæ?
+                            icd10Code.startsWith('T81.3')     // ?‹è??·å£è£‚é?
+                        )) {
+                            infectionCount++;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        const rate = cleanSurgeryCount > 0 ? 
+            ((infectionCount / cleanSurgeryCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ??æ¸…æ·¨?‹è??·å£?Ÿæ???- ?Ÿæ?: ${infectionCount}, æ¸…æ·¨?‹è?: ${cleanSurgeryCount}, æ¯”ç?: ${rate}%`);
+        
+        return { rate: rate, numerator: infectionCount, denominator: cleanSurgeryCount };
+    } catch (error) {
+        console.error(`  ???¥è©¢å¤±æ?:`, error);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+}
+
+// ?šç”¨?‡æ? - ?Ÿå¯¦?¥è©¢?ˆï??¯æ?å­?º¦?ƒæ•¸ï¼?
+async function queryGenericIndicatorSample(conn, indicatorId, quarter = null) {
+    const targetQuarter = quarter || getCurrentQuarter();
+    const dateRange = getQuarterDateRange(targetQuarter);
+    
+    console.log(`  ?Ÿå¯¦?¥è©¢: ${indicatorId} (${targetQuarter})`);
+    
+    const encounters = await conn.query('Encounter', {
+        status: 'finished',
+        date: `ge${dateRange.start}&date=le${dateRange.end}`,
+        _count: 2000
+    });
+    
+    const total = encounters.entry?.length || 0;
+    
+    if (total === 0) {
+        console.warn(`  ? ï? ${indicatorId} ?¡è???(${targetQuarter})`);
+        return { rate: '0.00', numerator: 0, denominator: 0 };
+    }
+    
+    // ? ï? è­¦å?: æ­¤æ?æ¨™å??ªå¯¦?¾CQL?è¼¯,?…è??encounterç¸½æ•¸
+    console.warn(`  ? ï? ${indicatorId} å°šæœªå¯¦ç¾CQL?è¼¯`);
+    const rate = '0.00';
+    const numerator = 0;
+    
+    console.log(`    ?«å?çµæ? - ?†å?: ${numerator}, ?†æ?: ${total}, æ¯”ç?: ${rate}%`);
+    
+    return { rate: rate, numerator: numerator, denominator: total };
+}
+
+// ?´æ–°?‡æ??¡ç?
+function updateIndicatorCard(indicatorId, results) {
+    // å¾?indicatorId è§???ºå?ç´?ID: indicator-01 ??ind01Rate
+    const elementId = 'ind' + indicatorId.replace('indicator-', '').replace(/-/g, '_') + 'Rate';
+    const element = document.getElementById(elementId);
+    
+    console.log(`?? ?´æ–°?¡ç? ${indicatorId}:`, {
+        elementId, 
+        element: element ? '?¾åˆ°' : '?ªæ‰¾??,
+        results,
+        demoMode: results.demoMode
+    });
+    
+    if (!element) {
+        console.warn(`? ï? ?¾ä??°å?ç´? ${elementId}`);
+        return;
+    }
+    
+    // å¦‚æ??¯ç¤ºç¯„æ¨¡å¼æ•¸?šï??´æ¥é¡¯ç¤ºï¼ˆä?ç®?noDataï¼?
+    if (results.demoMode) {
+        const currentQuarter = getCurrentQuarter();
+        const currentValue = results.quarterly[currentQuarter] || '0.00';
+        console.log(`  ??ç¤ºç?æ¨¡å??¸æ? ${currentQuarter}, ?? ${currentValue}%`);
+        element.textContent = `${currentValue}%`;
+        element.classList.add('animated');
+        return;
+    }
+    
+    if (results.noData) {
+        // ?Ÿç??¡è??™æ?é¡¯ç¤º 0.00%
+        element.textContent = '0.00%';
+        console.log(`  ? ï? ?¡è??™ï?é¡¯ç¤º 0.00%`);
+        return;
+    }
+    
+    // é¡¯ç¤º?¶å?å­?º¦?„æ•¸??
+    if (results.quarterly) {
+        const currentQuarter = getCurrentQuarter();
+        const currentValue = results.quarterly[currentQuarter] || '0.00';
+        console.log(`  ???¶å?å­?º¦ ${currentQuarter}, ?? ${currentValue}, ?´æ–°?°å?ç´? ${elementId}`);
+        element.textContent = `${currentValue}%`;
+    }
+    element.classList.add('animated');
+}
+
+// ?²å??¶å?å­?º¦
+function getCurrentQuarter() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 0-11 -> 1-12
+    
+    let quarter;
+    if (month >= 1 && month <= 3) quarter = 'Q1';
+    else if (month >= 4 && month <= 6) quarter = 'Q2';
+    else if (month >= 7 && month <= 9) quarter = 'Q3';
+    else quarter = 'Q4';
+    
+    return `${year}-${quarter}`;
+}
+
+// ?²å?å­?º¦?„æ—¥?Ÿç???
+function getQuarterDateRange(quarter) {
+    const [year, q] = quarter.split('-');
+    const quarterMap = {
+        'Q1': { start: `${year}-01-01`, end: `${year}-03-31` },
+        'Q2': { start: `${year}-04-01`, end: `${year}-06-30` },
+        'Q3': { start: `${year}-07-01`, end: `${year}-09-30` },
+        'Q4': { start: `${year}-10-01`, end: `${year}-12-31` }
+    };
+    return quarterMap[q];
+}
+
+// ?Ÿæ?å­?º¦è¡¨æ ¼è¡?
+function generateQuarterRow(year, quarter, data, isCurrent) {
+    const bgColor = isCurrent ? 'background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); font-weight: bold;' : 
+                    (quarter === 'Q1' || quarter === 'Q3') ? 'background: #f8f9fa;' : '';
+    const marker = isCurrent ? ' <span style="color: #f59e0b; font-weight: bold;">???¶å?</span>' : '';
+    const quarterText = {
+        'Q1': 'ç¬¬ä?å­?,
+        'Q2': 'ç¬¬ä?å­?,
+        'Q3': 'ç¬¬ä?å­?,
+        'Q4': 'ç¬¬å?å­?
+    };
+    
+    // ?•ç? null ?¼ï?å°šæœªè¨ˆç??„å­£åº¦ï?
+    let displayValue, displayNumerator, displayDenominator;
+    if (data === null || data === undefined) {
+        displayValue = '<span style="color: #94a3b8;">--</span>';
+        displayNumerator = '<span style="color: #94a3b8;">--</span>';
+        displayDenominator = '<span style="color: #94a3b8;">--</span>';
+    } else if (typeof data === 'object') {
+        // å°è±¡?¼å?ï¼š{rate, numerator, denominator}
+        const numerator = data.numerator !== undefined ? data.numerator : 0;
+        const denominator = data.denominator !== undefined ? data.denominator : 0;
+        
+        // ?æ–°è¨ˆç?æ¯”ç?ï¼Œç¢ºä¿è??†å??†æ?ä¸€??
+        let rate;
+        if (denominator === 0) {
+            rate = '0.00';
+        } else {
+            rate = ((numerator / denominator) * 100).toFixed(2);
+        }
+        
+        displayValue = `${rate}%`;
+        displayNumerator = formatNumber(numerator);
+        displayDenominator = formatNumber(denominator);
+    } else {
+        // ç°¡å–®?¸å€¼æ ¼å¼ï??Šæ ¼å¼å…¼å®¹ï?
+        displayValue = `${data}%`;
+        displayNumerator = '<span style="color: #94a3b8;">--</span>';
+        displayDenominator = '<span style="color: #94a3b8;">--</span>';
+    }
+    
+    return `
+        <tr style="${bgColor}">
+            <td style="padding: 10px; text-align: center; border: 1px solid #ddd; font-weight: bold;">${year}</td>
+            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${quarterText[quarter]} (${quarter})${marker}</td>
+            <td style="padding: 10px; text-align: center; border: 1px solid #ddd; color: #667eea;">${displayNumerator}</td>
+            <td style="padding: 10px; text-align: center; border: 1px solid #ddd; color: #764ba2;">${displayDenominator}</td>
+            <td style="padding: 10px; text-align: center; border: 1px solid #ddd; font-size: 1.1rem; color: ${isCurrent ? '#f59e0b' : '#667eea'}; font-weight: ${isCurrent ? 'bold' : 'normal'};">${displayValue}</td>
+        </tr>
+    `;
+}
+
+// ?¼å??–æ•¸å­?
+function formatNumber(num) {
+    if (num === undefined || num === null) return '0';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// é¡¯ç¤ºè©³ç´°è³‡è? Modal
+async function showDetailModal(indicatorId) {
+    const modal = document.getElementById('detailModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    
+    // ?‡æ?æ¨™é?? å?
+    const titles = {
+        'indicator-01': '?€è¨ºæ³¨å°„å?ä½¿ç”¨??,
+        'indicator-02': '?€è¨ºæ??Ÿç?ä½¿ç”¨??,
+        // ... ?¶ä??‡æ?æ¨™é?
+    };
+    
+    modalTitle.textContent = titles[indicatorId] || '?‡æ?è©³æ?';
+    
+    const results = currentResults[indicatorId];
+    if (results) {
+        if (results.noData) {
+            modalBody.innerHTML = '<div class="no-data-message"><i class="fas fa-database"></i><p>è³‡æ?åº«ç„¡è³‡æ?</p></div>';
+        } else {
+            const currentQuarter = getCurrentQuarter();
+            
+            // æª¢æŸ¥?¯å¦?ªæ??¶å?å­?º¦?¸æ?ï¼Œé?è¦è?ç®—å…¶ä»–å­£åº?
+            if (results.currentQuarterOnly) {
+                // ç«‹å³é¡¯ç¤º?¶å?å­?º¦ï¼Œæ?è¨˜å…¶ä»–å­£åº¦ç‚ºè¼‰å…¥ä¸?
+                const updatedResults = currentResults[indicatorId];
+                // ä½¿ç”¨ quarterlyDetails ç¡®ä??°æ®ä¸€?´æ€?
+                const currentData = updatedResults.quarterlyDetails?.[currentQuarter] || {
+                    rate: updatedResults.quarterly[currentQuarter],
+                    numerator: updatedResults.numerator,
+                    denominator: updatedResults.denominator
+                };
+                
+                console.log(`?? ?¾ç¤ºæ¨¡æ€æ? ${indicatorId} - å½“å?å­?º¦?°æ®:`, currentData);
+                console.log(`   éªŒè?æ¯”ç?: ${currentData.numerator} Ã· ${currentData.denominator} = ${(currentData.numerator / currentData.denominator * 100).toFixed(2)}%`);
+                modalBody.innerHTML = `
+                    <div class="detail-content">
+                        <h3>å­?º¦çµ±è??¸æ? (2024-2025) <span style="font-size: 0.9rem; color: #94a3b8; font-weight: normal;">??æ­?œ¨è¼‰å…¥æ­·å²?¸æ?...</span></h3>
+                        <table id="quarterTable-${indicatorId}" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">å¹´åº¦</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">å­?º¦</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">?†å?</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">?†æ?</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">æ¯”ç? (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generateQuarterRow('2024', 'Q1', null, currentQuarter === '2024-Q1')}
+                                ${generateQuarterRow('2024', 'Q2', null, currentQuarter === '2024-Q2')}
+                                ${generateQuarterRow('2024', 'Q3', null, currentQuarter === '2024-Q3')}
+                                ${generateQuarterRow('2024', 'Q4', null, currentQuarter === '2024-Q4')}
+                                ${generateQuarterRow('2025', 'Q1', null, currentQuarter === '2025-Q1')}
+                                ${generateQuarterRow('2025', 'Q2', null, currentQuarter === '2025-Q2')}
+                                ${generateQuarterRow('2025', 'Q3', null, currentQuarter === '2025-Q3')}
+                                ${generateQuarterRow('2025', 'Q4', currentData, currentQuarter === '2025-Q4')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                modal.style.display = 'flex';
+                
+                // ?°æ­¥æ¼¸é€²å?è¼‰å…¥?¶ä?å­?º¦?¸æ?
+                console.log(`?‹å?è¼‰å…¥ ${indicatorId} ?„æ­·?²å­£åº¦æ•¸??..`);
+                progressiveLoadQuarters(indicatorId, currentResults[indicatorId]).catch(err => {
+                    console.error('è¼‰å…¥æ­·å²å­?º¦?¸æ?å¤±æ?:', err);
+                });
+            } else {
+                // é¡¯ç¤ºå®Œæ•´?¸æ?
+                const updatedResults = currentResults[indicatorId];
+                modalBody.innerHTML = `
+                    <div class="detail-content">
+                        <h3>å­?º¦çµ±è??¸æ? (2024-2025)</h3>
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">å¹´åº¦</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">å­?º¦</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">?†å?</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">?†æ?</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">æ¯”ç? (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generateQuarterRow('2024', 'Q1', updatedResults.quarterlyDetails['2024-Q1'], currentQuarter === '2024-Q1')}
+                                ${generateQuarterRow('2024', 'Q2', updatedResults.quarterlyDetails['2024-Q2'], currentQuarter === '2024-Q2')}
+                                ${generateQuarterRow('2024', 'Q3', updatedResults.quarterlyDetails['2024-Q3'], currentQuarter === '2024-Q3')}
+                                ${generateQuarterRow('2024', 'Q4', updatedResults.quarterlyDetails['2024-Q4'], currentQuarter === '2024-Q4')}
+                                ${generateQuarterRow('2025', 'Q1', updatedResults.quarterlyDetails['2025-Q1'], currentQuarter === '2025-Q1')}
+                                ${generateQuarterRow('2025', 'Q2', updatedResults.quarterlyDetails['2025-Q2'], currentQuarter === '2025-Q2')}
+                                ${generateQuarterRow('2025', 'Q3', updatedResults.quarterlyDetails['2025-Q3'], currentQuarter === '2025-Q3')}
+                                ${generateQuarterRow('2025', 'Q4', updatedResults.quarterlyDetails['2025-Q4'], currentQuarter === '2025-Q4')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+    } else {
+        modalBody.innerHTML = '<p>è«‹å??·è??¥è©¢</p>';
+    }
+    
+    modal.style.display = 'flex';
+}
+
+// æ¼¸é€²å?è¼‰å…¥å­?º¦?¸æ?ï¼ˆå??€?°å??è??¥ç?å¯¦æ•¸?šï?
+async function progressiveLoadQuarters(indicatorId, currentResults) {
+    console.log(`========== ?‹å?æ¼¸é€²å?è¼‰å…¥ ${indicatorId} ==========`);
+    console.log('currentResults:', currentResults);
+    
+    const conn = window.fhirConnection;
+    if (!conn) {
+        console.error('FHIR??¥ä¸å??¨ï??¡æ?è¼‰å…¥æ­·å²?¸æ?');
+        return;
+    }
+    
+    const currentQuarter = getCurrentQuarter();
+    console.log(`?¶å?å­?º¦: ${currentQuarter}`);
+    
+    // å¾æ??°å??è??¥ï?2025-Q3 ??2025-Q2 ??2025-Q1 ??2024-Q4 ??2024-Q3 ??2024-Q2 ??2024-Q1
+    const quarters = ['2025-Q3', '2025-Q2', '2025-Q1', '2024-Q4', '2024-Q3', '2024-Q2', '2024-Q1'];
+    console.log(`?€è¦è??¥ç?å­?º¦:`, quarters.filter(q => q !== currentQuarter));
+    
+    for (let i = 0; i < quarters.length; i++) {
+        const q = quarters[i];
+        if (q !== currentQuarter) {
+            console.log(`\n--- ?‹å??•ç?å­?º¦ ${q} (${i + 1}/${quarters.length}) ---`);
+            try {
+                // ?ºè©²å­?º¦?¥è©¢?Ÿå¯¦?¸æ?
+                let quarterResult;
+                
+                if (indicatorId === 'indicator-01') {
+                    quarterResult = await queryOutpatientInjectionRateSample(conn, q);
+                } else if (indicatorId === 'indicator-02') {
+                    quarterResult = await queryOutpatientAntibioticRateSample(conn, q);
+                } else if (indicatorId.startsWith('indicator-03')) {
+                    quarterResult = await queryDrugOverlapRateSample(conn, indicatorId, q);
+                } else if (indicatorId === 'indicator-04') {
+                    quarterResult = await queryChronicPrescriptionRateSample(conn, q);
+                } else if (indicatorId === 'indicator-05') {
+                    quarterResult = await queryPrescription10PlusDrugsRateSample(conn, q);
+                } else if (indicatorId === 'indicator-06') {
+                    quarterResult = await queryPediatricAsthmaEDRateSample(conn, q);
+                } else if (indicatorId === 'indicator-07') {
+                    quarterResult = await queryDiabetesHbA1cTestingRateSample(conn, q);
+                } else if (indicatorId === 'indicator-08') {
+                    quarterResult = await querySameDaySameDiseaseRevisitRateSample(conn, q);
+                } else if (indicatorId === 'indicator-09') {
+                    quarterResult = await queryReadmissionRateSample(conn, q);
+                } else if (indicatorId === 'indicator-10') {
+                    quarterResult = await queryInpatient3DayEDAfterDischargeSample(conn, q);
+                } else if (indicatorId === 'indicator-11-1') {
+                    quarterResult = await queryCesareanSectionOverallRateSample(conn, q);
+                } else if (indicatorId === 'indicator-11-2') {
+                    quarterResult = await queryCesareanSectionPatientRequestedRateSample(conn, q);
+                } else if (indicatorId === 'indicator-11-3') {
+                    quarterResult = await queryCesareanSectionWithIndicationRateSample(conn, q);
+                } else if (indicatorId === 'indicator-11-4') {
+                    quarterResult = await queryCesareanSectionFirstTimeRateSample(conn, q);
+                } else if (indicatorId === 'indicator-12') {
+                    quarterResult = await queryCleanSurgeryAntibioticOver3DaysRateSample(conn, q);
+                } else if (indicatorId === 'indicator-13') {
+                    quarterResult = await queryESWLAverageUtilizationTimesSample(conn, q);
+                } else if (indicatorId === 'indicator-14') {
+                    quarterResult = await queryUterineFibroidSurgery14DayReadmissionSample(conn, q);
+                } else if (indicatorId === 'indicator-15-1') {
+                    quarterResult = await queryKneeArthroplasty90DayDeepInfectionSample(conn, q);
+                } else if (indicatorId === 'indicator-15-2') {
+                    quarterResult = await queryTotalKneeArthroplasty90DayInfectionSample(conn, q);
+                } else if (indicatorId === 'indicator-15-3') {
+                    quarterResult = await queryPartialKneeArthroplasty90DayInfectionSample(conn, q);
+                } else if (indicatorId === 'indicator-16') {
+                    quarterResult = await queryInpatientSurgicalWoundInfectionRateSample(conn, q);
+                } else if (indicatorId === 'indicator-17') {
+                    quarterResult = await queryAcuteMyocardialInfarctionMortalityRateSample(conn, q);
+                } else if (indicatorId === 'indicator-18') {
+                    quarterResult = await queryDementiaHospiceCareUtilizationRateSample(conn, q);
+                } else if (indicatorId === 'indicator-19') {
+                    quarterResult = await queryCleanSurgeryWoundInfectionRateSample(conn, q);
+                } else {
+                    quarterResult = await queryGenericIndicatorSample(conn, indicatorId, q);
+                }
+                
+                console.log(`${q} ?¥è©¢çµæ?:`, quarterResult);
+                
+                currentResults.quarterly[q] = quarterResult.rate;
+                
+                // å­˜å„²å­?º¦è©³ç´°?¸æ?
+                if (!currentResults.quarterlyDetails) {
+                    currentResults.quarterlyDetails = {};
+                }
+                currentResults.quarterlyDetails[q] = {
+                    rate: quarterResult.rate,
+                    numerator: quarterResult.numerator,
+                    denominator: quarterResult.denominator
+                };
+                
+                console.log(`${q} ?´æ–°??quarterlyDetails:`, currentResults.quarterlyDetails[q]);
+                
+                // ?´æ–°?¨å?çµæ?
+                window.currentResults[indicatorId] = currentResults;
+                
+                // ?´æ–°UIé¡¯ç¤ºè©²å­£åº?
+                console.log(`?‹å??´æ–° ${q} ??UI...`);
+                updateQuarterInTable(indicatorId, q, currentResults.quarterlyDetails[q]);
+                console.log(`${q} UI ?´æ–°å®Œæ?`);
+                
+            } catch (error) {
+                console.error(`?¥è©¢ ${q} å¤±æ?:`, error);
+                
+                currentResults.quarterly[q] = '0.00';
+                
+                if (!currentResults.quarterlyDetails) {
+                    currentResults.quarterlyDetails = {};
+                }
+                currentResults.quarterlyDetails[q] = {
+                    rate: '0.00',
+                    numerator: 0,
+                    denominator: 0
+                };
+                
+                console.warn(`  ${q} ?¡è???- ?†å?: 0, ?†æ?: 0, æ¯”ç?: 0.00%`);
+                updateQuarterInTable(indicatorId, q, currentResults.quarterlyDetails[q]);
+            }
+            
+            // å»¶é²300ms?è??¥ä?ä¸€å­?º¦ï¼Œè??¨æˆ¶?‹åˆ°æ¼¸é€²æ???
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+    }
+    
+    // ?¨éƒ¨è¼‰å…¥å®Œæ?å¾Œï?ç§»é™¤è¼‰å…¥?ç¤º
+    const header = document.querySelector(`#quarterTable-${indicatorId}`)?.previousElementSibling;
+    if (header) {
+        header.innerHTML = 'å­?º¦çµ±è??¸æ? (2024-2025) <span style="font-size: 0.9rem; color: #10b981; font-weight: normal;">??è¼‰å…¥å®Œæ?</span>';
+        setTimeout(() => {
+            header.textContent = 'å­?º¦çµ±è??¸æ? (2024-2025)';
+        }, 2000);
+    }
+    
+    // æ¨™è?å·²å???
+    currentResults.currentQuarterOnly = false;
+    
+    console.log(`${indicatorId} æ­·å²?¸æ?è¼‰å…¥å®Œæ?`);
+}
+
+// ?´æ–°è¡¨æ ¼ä¸­ç‰¹å®šå­£åº¦ç??¸æ?
+function updateQuarterInTable(indicatorId, quarter, data) {
+    const table = document.getElementById(`quarterTable-${indicatorId}`);
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    const rows = tbody.querySelectorAll('tr');
+    const currentQuarter = getCurrentQuarter();
+    
+    // ?¾åˆ°å°æ?å­?º¦?„è?ä¸¦æ›´??
+    const quarterMap = {
+        '2024-Q1': 0, '2024-Q2': 1, '2024-Q3': 2, '2024-Q4': 3,
+        '2025-Q1': 4, '2025-Q2': 5, '2025-Q3': 6, '2025-Q4': 7
+    };
+    
+    const rowIndex = quarterMap[quarter];
+    if (rowIndex !== undefined && rows[rowIndex]) {
+        const cells = rows[rowIndex].querySelectorAll('td');
+        const isCurrent = quarter === currentQuarter;
+        
+        // ?´æ–°?†å?ï¼ˆç¬¬3?—ï?
+        if (cells[2]) {
+            cells[2].innerHTML = formatNumber(data.numerator);
+            cells[2].style.animation = 'fadeIn 0.3s ease-in';
+        }
+        
+        // ?´æ–°?†æ?ï¼ˆç¬¬4?—ï?
+        if (cells[3]) {
+            cells[3].innerHTML = formatNumber(data.denominator);
+            cells[3].style.animation = 'fadeIn 0.3s ease-in';
+        }
+        
+        // ?´æ–°æ¯”ç?ï¼ˆç¬¬5?—ï?
+        if (cells[4]) {
+            cells[4].innerHTML = `${data.rate}%`;
+            cells[4].style.color = isCurrent ? '#f59e0b' : '#667eea';
+            cells[4].style.fontWeight = isCurrent ? 'bold' : 'normal';
+            cells[4].style.animation = 'fadeIn 0.3s ease-in';
+        }
+    }
+}
+
+// ?œé? Modal
+function closeModal() {
+    const modal = document.getElementById('detailModal');
+    modal.style.display = 'none';
+}
+
+// ?æ–°?´ç?è³‡æ?
+function refreshData() {
+    location.reload();
+}
+
+// ?¯å‡ºè³‡æ?
+function exportData() {
+    const dataStr = JSON.stringify(currentResults, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `quality-indicators-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+}
+
+// ?‡æ??°æ¸¬è©¦æ??™å™¨
+function switchToTestServer() {
+    const testServer = 'https://hapi.fhir.org/baseR4';
+    
+    if (confirm(`å°‡å??›åˆ°?¬é?æ¸¬è©¦FHIR?å???\n${testServer}\n\næ­¤æ??™å™¨?…å«æ¸¬è©¦?¸æ?,?¯ä»¥é©—è?CQL?è¼¯?‚\n\n?¯å¦ç¹¼ç??`)) {
+        // ä¿å??°localStorage
+        localStorage.setItem('fhirServer', testServer);
+        localStorage.removeItem('authToken'); // ?¬é??å??¨ä??€è¦token
+        
+        // ?´æ–°?¶å???¥
+        if (typeof FHIRConnection !== 'undefined') {
+            window.fhirConnection = new FHIRConnection();
+            window.fhirConnection.serverUrl = testServer;
+            window.fhirConnection.authToken = '';
+            window.fhirConnection.isConnected = true;
+        }
+        
+        // ?±è?Banner
+        const banner = document.getElementById('noDataBanner');
+        if (banner) {
+            banner.style.display = 'none';
+        }
+        
+        // ?ç¤º?¨æˆ¶
+        alert('??å·²å??›åˆ°æ¸¬è©¦?å??¨\n\nè«‹é??°é????¥è©¢"?‰é?æ¸¬è©¦?‡æ???);
+        
+        console.log('??å·²å??›åˆ°æ¸¬è©¦?å???', testServer);
+    }
+}
+
+// ========== ç¤ºç?æ¨¡å??§åˆ¶ ==========
+function toggleDemoMode() {
+    const currentMode = localStorage.getItem('demoMode') === 'true';
+    const newMode = !currentMode;
+    
+    localStorage.setItem('demoMode', newMode.toString());
+    updateDemoModeButton();
+    
+    const message = newMode 
+        ? '??ç¤ºç?æ¨¡å?å·²å??¨\n\n??FHIR ä¼ºæ??¨æ??‰è??™æ?ï¼Œç³»çµ±å?é¡¯ç¤ºæ¨¡æ“¬?¸æ?ä¾›å?ç¤ºä½¿?¨ã€‚\n\nè«‹é??°æ•´?†é??¢ä¸¦é»æ??ŒæŸ¥è©¢ã€æ??•æ¸¬è©¦ã€?
+        : '??ç¤ºç?æ¨¡å?å·²é??‰\n\nç³»çµ±å°‡åªé¡¯ç¤º FHIR ä¼ºæ??¨ç??Ÿå¯¦è³‡æ???;
+    
+    alert(message);
+    console.log(`ç¤ºç?æ¨¡å?: ${newMode ? '?Ÿç”¨' : '?œé?'}`);
+    
+    // ?æ–°è¼‰å…¥?é¢ä»¥æ??¨è¨­å®?
+    if (newMode) {
+        location.reload();
+    }
+}
+
+function updateDemoModeButton() {
+    // å¦‚æ?å¾æœªè¨­å??ï??è¨­?Ÿç”¨ç¤ºç?æ¨¡å?
+    if (localStorage.getItem('demoMode') === null) {
+        localStorage.setItem('demoMode', 'true');
+    }
+    
+    const demoMode = localStorage.getItem('demoMode') === 'true';
+    const btn = document.getElementById('demoModeBtn');
+    const text = document.getElementById('demoModeText');
+    
+    if (btn && text) {
+        if (demoMode) {
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            text.textContent = 'ç¤ºç?æ¨¡å?ï¼šé???;
+        } else {
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-secondary');
+            btn.style.background = '';
+            text.textContent = '?Ÿç”¨ç¤ºç?æ¨¡å?';
+        }
+    }
+    
+    console.log(`?­ ç¤ºç?æ¨¡å??€?? ${demoMode ? 'å·²å??? : 'å·²é???}`);
+}
+
+// ========== ç¤ºç?æ¨¡å?ï¼šæ¨¡?¬æ•¸?šç???==========
+function generateDemoData(indicatorId, currentQuarter) {
+    // ?ºä??Œæ?æ¨™ç??å??†ç?æ¨¡æ“¬?¸æ?
+    const demoRates = {
+        'indicator-01': 2.35,  // ?€è¨ºæ³¨å°„å?ä½¿ç”¨??
+        'indicator-02': 18.42, // ?€è¨ºæ??Ÿç?ä½¿ç”¨??
+        'indicator-03-1': 1.23, 'indicator-03-2': 0.98, 'indicator-03-3': 1.45,
+        'indicator-03-4': 0.76, 'indicator-03-5': 1.12, 'indicator-03-6': 0.89,
+        'indicator-03-7': 1.34, 'indicator-03-8': 0.67, 'indicator-03-9': 2.15,
+        'indicator-03-10': 1.89, 'indicator-03-11': 1.67, 'indicator-03-12': 0.94,
+        'indicator-03-13': 1.28, 'indicator-03-14': 1.56, 'indicator-03-15': 1.02,
+        'indicator-03-16': 0.78,
+        'indicator-04': 65.34, // ?¢æ€§ç?????•æ–¹ç®‹ä½¿?¨ç?
+        'indicator-05': 12.45, 'indicator-06': 8.76, 'indicator-07': 15.23, 'indicator-08': 22.67,
+        'indicator-09': 5.67, 'indicator-10': 89.23,
+        'indicator-11-1': 92.45, 'indicator-11-2': 88.76, 'indicator-11-3': 91.23, 'indicator-11-4': 87.89,
+        'indicator-12': 4.32, 'indicator-13': 450,
+        'indicator-14': 3.45, 'indicator-15-1': 2.87, 'indicator-15-2': 1.98, 'indicator-15-3': 2.34,
+        'indicator-16': 85.67, 'indicator-17': 2.89, 'indicator-18': 1.76, 'indicator-19': 78.90
+    };
+    
+    const baseRate = demoRates[indicatorId] || 5.00;
+    
+    // ?Ÿæ?8?‹å­£åº¦ç??¸æ?ï¼ˆæ??ªç„¶æ³¢å?ï¼?
+    const quarters = ['2024-Q1', '2024-Q2', '2024-Q3', '2024-Q4', '2025-Q1', '2025-Q2', '2025-Q3', '2025-Q4'];
+    const quarterly = {};
+    const quarterlyDetails = {};
+    
+    quarters.forEach((q, idx) => {
+        // æ·»å? Â±10% ?„éš¨æ©Ÿæ³¢??
+        const variance = (Math.random() - 0.5) * 0.2;
+        const rate = (baseRate * (1 + variance)).toFixed(2);
+        quarterly[q] = parseFloat(rate);
+        
+        // ?Ÿæ??ˆç??„å?å­å?æ¯ï?ç¢ºä?æ¯”ç?æ­?¢ºï¼?
+        const denominator = Math.floor(1000 + Math.random() * 2000);
+        const numerator = Math.round(denominator * rate / 100);
+        
+        quarterlyDetails[q] = {
+            rate: parseFloat(rate),
+            numerator: numerator,
+            denominator: denominator
+        };
+    });
+    
+    const currentData = quarterlyDetails[currentQuarter];
+    
+    console.log(`?? ç¤ºç??¸æ? - ${indicatorId}:`, {
+        currentQuarter: currentQuarter,
+        rate: currentData.rate,
+        numerator: currentData.numerator,
+        denominator: currentData.denominator
+    });
+    
+    return {
+        quarterly: quarterly,
+        quarterlyDetails: quarterlyDetails,
+        numerator: currentData.numerator,
+        denominator: currentData.denominator,
+        noData: false,
+        currentQuarterOnly: false,
+        demoMode: true
+    };
+}
+
+// ?´éœ²?¹æ¬¡?·è??½æ•¸?°å…¨å±€
+window.executeAllMedication = executeAllMedication;
+window.executeAllOutpatient = executeAllOutpatient;
+window.executeAllInpatient = executeAllInpatient;
+window.executeAllSurgery = executeAllSurgery;
+window.executeAllOutcome = executeAllOutcome;
+window.switchToTestServer = switchToTestServer;
+
+// ========== EXCEL ?Ÿæ??Ÿèƒ½ ==========
+
+// ?Ÿæ?Excel?±å?
+async function generateExcel() {
+    console.log('?‹å??Ÿæ?Excel?±å?...');
+    
+    // é¡¯ç¤ºè¼‰å…¥?ç¤º
+    const loadingMessage = document.createElement('div');
+    loadingMessage.id = 'excelLoadingMessage';
+    loadingMessage.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem 3rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        z-index: 10001;
+        text-align: center;
+    `;
+    loadingMessage.innerHTML = `
+        <div style="font-size: 1.2rem; color: #1e293b; margin-bottom: 1rem;">
+            <i class="fas fa-file-excel" style="color: #10b981; font-size: 2rem; margin-bottom: 0.5rem;"></i>
+            <div style="margin-top: 0.5rem; font-weight: 600;">æ­?œ¨?Ÿæ?Excel?±å?...</div>
+        </div>
+        <div style="color: #64748b; font-size: 0.9rem;">è«‹ç??™ï?æ­?œ¨?¶é?39?…æ?æ¨™æ•¸??/div>
+    `;
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'excelOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 10000;
+    `;
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(loadingMessage);
+    
+    try {
+        // ?¶é??€?‰æ?æ¨™æ•¸??
+        const allData = await collectAllIndicatorsData();
+        
+        // ?Ÿæ?Excelå·¥ä?ç°?
+        const workbook = createExcelWorkbook(allData);
+        
+        // ?Ÿæ?ä¸¦ä?è¼‰Excel
+        XLSX.writeFile(workbook, `?—å£?·å??«é™¢_?«ç??è³ª?±å?_${getCurrentDateString()}.xlsx`);
+        
+        // ç§»é™¤è¼‰å…¥?ç¤º
+        setTimeout(() => {
+            document.body.removeChild(loadingMessage);
+            document.body.removeChild(overlay);
+        }, 500);
+        
+        console.log('Excel?Ÿæ??å?ï¼?);
+        
+    } catch (error) {
+        console.error('Excel?Ÿæ?å¤±æ?:', error);
+        
+        // é¡¯ç¤º?¯èª¤è¨Šæ¯
+        loadingMessage.innerHTML = `
+            <div style="font-size: 1.2rem; color: #ef4444; margin-bottom: 1rem;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                <div style="margin-top: 0.5rem; font-weight: 600;">Excel?Ÿæ?å¤±æ?</div>
+            </div>
+            <div style="color: #64748b; font-size: 0.9rem;">${error.message}</div>
+            <button onclick="document.body.removeChild(document.getElementById('excelLoadingMessage')); document.body.removeChild(document.getElementById('excelOverlay'));" 
+                    style="margin-top: 1rem; padding: 0.5rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                ?œé?
+            </button>
+        `;
+    }
+}
+
+// ä¸Šå‚³?¥ä?å±€?Ÿèƒ½
+function uploadToNHI() {
+    // é¡¯ç¤ºå°šæœª????„è???
+    const messageBox = document.createElement('div');
+    messageBox.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem 3rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        z-index: 10001;
+        text-align: center;
+        min-width: 400px;
+    `;
+    messageBox.innerHTML = `
+        <div style="font-size: 1.2rem; color: #1e293b; margin-bottom: 1rem;">
+            <i class="fas fa-link-slash" style="color: #f59e0b; font-size: 2rem; margin-bottom: 0.5rem;"></i>
+            <div style="margin-top: 0.5rem; font-weight: 600;">å°šæœª???</div>
+        </div>
+        <div style="color: #64748b; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.6;">
+            ?¥ä?å±€ç³»çµ±???å°šæœªå»ºç?<br>
+            ???å¾Œå³?¯ä??³é†«?‚å?è³ªå ±??
+        </div>
+        <button onclick="this.parentElement.parentElement.remove(); document.getElementById('nhiOverlay').remove();" 
+                style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
+            <i class="fas fa-check"></i> ç¢ºå?
+        </button>
+    `;
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'nhiOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 10000;
+    `;
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(messageBox);
+    
+    console.log('é¡¯ç¤º?¥ä?å±€????ç¤º');
+}
+
+// ?¶é??€??9?…æ?æ¨™ç??¸æ?
+async function collectAllIndicatorsData() {
+    console.log('?‹å??¶é?39?…æ?æ¨™æ•¸??..');
+    
+    const demoMode = localStorage.getItem('demoMode') === 'true';
+    const indicators = [];
+    
+    // å®šç¾©39?…æ?æ¨?
+    const indicatorDefinitions = [
+        // ?¨è—¥å®‰å…¨?‡æ? (1-18)
+        { id: '01', name: '?€è¨ºæ³¨å°„å?ä½¿ç”¨??, category: '?¨è—¥å®‰å…¨', code: '3127' },
+        { id: '02', name: '?€è¨ºæ??Ÿç?ä½¿ç”¨??, category: '?¨è—¥å®‰å…¨', code: '1140.01' },
+        { id: '03-1', name: '?Œé™¢?è?å£“é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1710' },
+        { id: '03-2', name: '?Œé™¢?è??‚é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1711' },
+        { id: '03-3', name: '?Œé™¢?è?ç³–é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1712' },
+        { id: '03-4', name: '?Œé™¢?—æ€è¦ºå¤±èª¿?ç???, category: '?¨è—¥å®‰å…¨', code: '1726' },
+        { id: '03-5', name: '?Œé™¢?—æ?é¬±é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1727' },
+        { id: '03-6', name: '?Œé™¢å®‰ç??®é??ç???, category: '?¨è—¥å®‰å…¨', code: '1728' },
+        { id: '03-7', name: '?Œé™¢?—è??“é??Šç?', category: '?¨è—¥å®‰å…¨', code: '3375' },
+        { id: '03-8', name: '?Œé™¢?å??ºè‚¥å¤§é??Šç?', category: '?¨è—¥å®‰å…¨', code: '3376' },
+        { id: '03-9', name: 'è·¨é™¢?è?å£“é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1713' },
+        { id: '03-10', name: 'è·¨é™¢?è??‚é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1714' },
+        { id: '03-11', name: 'è·¨é™¢?è?ç³–é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1715' },
+        { id: '03-12', name: 'è·¨é™¢?—æ€è¦ºå¤±èª¿?ç???, category: '?¨è—¥å®‰å…¨', code: '1729' },
+        { id: '03-13', name: 'è·¨é™¢?—æ?é¬±é??Šç?', category: '?¨è—¥å®‰å…¨', code: '1730' },
+        { id: '03-14', name: 'è·¨é™¢å®‰ç??®é??ç???, category: '?¨è—¥å®‰å…¨', code: '1731' },
+        { id: '03-15', name: 'è·¨é™¢?—è??“é??Šç?', category: '?¨è—¥å®‰å…¨', code: '3377' },
+        { id: '03-16', name: 'è·¨é™¢?å??ºè‚¥å¤§é??Šç?', category: '?¨è—¥å®‰å…¨', code: '3378' },
+        
+        // ?€è¨ºå?è³ªæ?æ¨?(4-8)
+        { id: '04', name: '?¢æ€§ç?????•æ–¹ç®‹é?ç«‹ç?', category: '?€è¨ºå?è³?, code: '1318' },
+        { id: '05', name: '?•æ–¹10ç¨®ä»¥ä¸Šè—¥?ä»¶?¸ç?', category: '?€è¨ºå?è³?, code: '3128' },
+        { id: '06', name: '?’ç«¥æ°???¥è¨º??, category: '?€è¨ºå?è³?, code: '1315Q' },
+        { id: '07', name: 'ç³–å°¿?…HbA1cæª¢æ¸¬??, category: '?€è¨ºå?è³?, code: '109.01Q' },
+        { id: '08', name: '?Œæ—¥?Œç–¾?…å?å°±è¨º??, category: '?€è¨ºå?è³?, code: '1322' },
+        
+        // ä½é™¢?è³ª?‡æ? (9-11)
+        { id: '09', name: '?è??«æ€?4?¥å…§?ä??¢ç?', category: 'ä½é™¢?è³ª', code: '1077.01Q' },
+        { id: '10', name: '?ºé™¢å¾??¥å…§?¥è¨º??, category: 'ä½é™¢?è³ª', code: '108.01' },
+        { id: '11-1', name: '?´é??–è…¹?¢ç?', category: 'ä½é™¢?è³ª', code: '1136.01' },
+        { id: '11-2', name: '?¢å©¦è¦æ??–è…¹?¢ç?', category: 'ä½é™¢?è³ª', code: '1137.01' },
+        { id: '11-3', name: '?‰é©?‰ç??–è…¹?¢ç?', category: 'ä½é™¢?è³ª', code: '1138.01' },
+        { id: '11-4', name: '?æ¬¡?–è…¹?¢ç?', category: 'ä½é™¢?è³ª', code: '1075.01' },
+        
+        // ?‹è??è³ª?‡æ? (12-16, 19)
+        { id: '12', name: 'æ¸…æ·¨?‹è??—ç?ç´ è????¥ç?', category: '?‹è??è³ª', code: '1155' },
+        { id: '13', name: 'ESWLå¹³å??©ç”¨æ¬¡æ•¸', category: '?‹è??è³ª', code: '20.01Q' },
+        { id: '14', name: 'å­å®®?Œç˜¤?‹è?14?¥å?ä½é™¢??, category: '?‹è??è³ª', code: '473.01' },
+        { id: '15-1', name: 'äººå·¥?é?ç¯€90?¥æ·±?¨æ??“ç?', category: '?‹è??è³ª', code: '353.01' },
+        { id: '15-2', name: '?¨äººå·¥è??œç?90?¥æ·±?¨æ??“ç?', category: '?‹è??è³ª', code: '3249' },
+        { id: '15-3', name: '?¨å?äººå·¥?é?ç¯€90?¥æ·±?¨æ??“ç?', category: '?‹è??è³ª', code: '3250' },
+        { id: '16', name: 'ä½é™¢?‹è??·å£?Ÿæ???, category: '?‹è??è³ª', code: '1658Q' },
+        { id: '19', name: 'æ¸…æ·¨?‹è??·å£?Ÿæ???, category: '?‹è??è³ª', code: '2524Q' },
+        
+        // çµæ??è³ª?‡æ? (17-18)
+        { id: '17', name: '?¥æ€§å??Œæ?å¡æ­»äº¡ç?', category: 'çµæ??è³ª', code: '1662Q' },
+        { id: '18', name: 'å¤±æ™º?‡å?å¯§ç?è­·åˆ©?¨ç?', category: 'çµæ??è³ª', code: '2795Q' }
+    ];
+    
+    // ?Ÿæ?å­?º¦?¸æ?ï¼ˆå?2024Q1?°ç•¶?å­£åº¦ï?
+    const quarters = generateQuartersList();
+    
+    // ?ºæ??‹æ?æ¨™ç??æ•¸??
+    for (const def of indicatorDefinitions) {
+        const quarterlyData = {};
+        
+        for (const quarter of quarters) {
+            if (demoMode) {
+                // ç¤ºç?æ¨¡å?ï¼šç??æ¨¡?¬æ•¸??
+                quarterlyData[quarter] = generateDemoIndicatorValue(def.category, def.code);
+            } else {
+                // ?Ÿå¯¦æ¨¡å?ï¼šå?currentResults?²å?ï¼ˆå??œæ??„è©±ï¼?
+                const elementId = def.id.replace('-', '_');
+                const element = document.getElementById(`ind${elementId}Rate`);
+                quarterlyData[quarter] = element ? element.textContent : '--';
+            }
+        }
+        
+        indicators.push({
+            id: def.id,
+            name: def.name,
+            category: def.category,
+            code: def.code,
+            quarterlyData: quarterlyData
+        });
+    }
+    
+    console.log('?¸æ??¶é?å®Œæ?ï¼Œå…±', indicators.length, '?…æ?æ¨?);
+    return {
+        indicators: indicators,
+        quarters: quarters,
+        generatedDate: new Date().toLocaleString('zh-TW'),
+        hospital: '?—å£?·å??«é™¢',
+        demoMode: demoMode
+    };
+}
+
+// ?Ÿæ?å­?º¦?—è¡¨ï¼?024Q1?°ç•¶?å­£åº¦ï?
+function generateQuartersList() {
+    const quarters = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentQuarter = Math.ceil(currentMonth / 3);
+    
+    // å¾?024Q1?‹å?
+    for (let year = 2024; year <= currentYear; year++) {
+        const maxQuarter = (year === currentYear) ? currentQuarter : 4;
+        for (let q = 1; q <= maxQuarter; q++) {
+            quarters.push(`${year}Q${q}`);
+        }
+    }
+    
+    return quarters;
+}
+
+// ?Ÿæ?ç¤ºç??‡æ???
+function generateDemoIndicatorValue(category, code) {
+    // ?¹æ??‡æ?é¡åˆ¥è¨­å??ˆç??„ç???
+    let min, max, decimals = 2, isPercentage = true;
+    
+    if (category === '?¨è—¥å®‰å…¨') {
+        min = 0.5;
+        max = 5.0;
+    } else if (category === '?€è¨ºå?è³?) {
+        if (code === '1318') { // ?¢æ€§ç?????•æ–¹ç®?
+            min = 60;
+            max = 80;
+        } else {
+            min = 1.0;
+            max = 10.0;
+        }
+    } else if (category === 'ä½é™¢?è³ª') {
+        min = 2.0;
+        max = 15.0;
+    } else if (category === '?‹è??è³ª') {
+        if (code === '20.01Q') { // ESWLå¹³å?æ¬¡æ•¸
+            isPercentage = false;
+            min = 1.0;
+            max = 3.0;
+            decimals = 1;
+        } else {
+            min = 0.5;
+            max = 5.0;
+        }
+    } else if (category === 'çµæ??è³ª') {
+        min = 1.0;
+        max = 8.0;
+    } else {
+        min = 1.0;
+        max = 10.0;
+    }
+    
+    const value = (Math.random() * (max - min) + min).toFixed(decimals);
+    return isPercentage ? `${value}%` : value;
+}
+
+// ?µå»ºExcelå·¥ä?ç°?
+function createExcelWorkbook(data) {
+    const { indicators, quarters, generatedDate, hospital, demoMode } = data;
+    
+    // ?µå»º?°å·¥ä½œç°¿
+    const workbook = XLSX.utils.book_new();
+    
+    // 1. ?µå»ºå°é¢å·¥ä?è¡?
+    const coverData = [
+        [hospital],
+        ['?«é™¢ç¸½é??´é??§é†«?‚å?è³ªè?è¨Šå…¬??],
+        ['FHIR ?Ÿæ?è³‡æ?'],
+        [''],
+        [`è³‡æ??Ÿé?: ${quarters[0]} ~ ${quarters[quarters.length - 1]}`],
+        [`?Ÿæ??¥æ?: ${generatedDate}`],
+        [demoMode ? 'è³‡æ?ä¾†æ?: ç¤ºç?æ¨¡æ“¬?¸æ?' : 'è³‡æ?ä¾†æ?: FHIR ä¼ºæ??¨ç?å¯¦æ•¸??],
+        ['??9?…æ ¸å¿ƒå?è³ªæ?æ¨?]
+    ];
+    
+    const coverSheet = XLSX.utils.aoa_to_sheet(coverData);
+    
+    // è¨­å?å°é¢æ¨??ï¼ˆæ?å¯¬ï?
+    coverSheet['!cols'] = [{ wch: 60 }];
+    
+    XLSX.utils.book_append_sheet(workbook, coverSheet, 'å°é¢');
+    
+    // 2. ?µå»º?®é?å·¥ä?è¡?
+    const tocData = [
+        ['?®é?'],
+        [''],
+        ['?¨è—¥å®‰å…¨?‡æ? (?‡æ?1-3ï¼Œå…±18??'],
+        ['?€è¨ºå?è³ªæ?æ¨?(?‡æ?4-8ï¼Œå…±5??'],
+        ['ä½é™¢?è³ª?‡æ? (?‡æ?9-11ï¼Œå…±6??'],
+        ['?‹è??è³ª?‡æ? (?‡æ?12-16, 19ï¼Œå…±8??'],
+        ['çµæ??è³ª?‡æ? (?‡æ?17-18ï¼Œå…±2??'],
+        [''],
+        ['?¬å ±?Šæ•¸?šå¡«?¥ã€Œé†«å­¸ä¸­å¿ƒã€æ?ä½?]
+    ];
+    
+    const tocSheet = XLSX.utils.aoa_to_sheet(tocData);
+    tocSheet['!cols'] = [{ wch: 50 }];
+    
+    XLSX.utils.book_append_sheet(workbook, tocSheet, '?®é?');
+    
+    // 3. ?ºæ??‹å?é¡å‰µå»ºå·¥ä½œè¡¨
+    const categories = [
+        { name: '?¨è—¥å®‰å…¨', sheetName: '?¨è—¥å®‰å…¨?‡æ?' },
+        { name: '?€è¨ºå?è³?, sheetName: '?€è¨ºå?è³ªæ?æ¨? },
+        { name: 'ä½é™¢?è³ª', sheetName: 'ä½é™¢?è³ª?‡æ?' },
+        { name: '?‹è??è³ª', sheetName: '?‹è??è³ª?‡æ?' },
+        { name: 'çµæ??è³ª', sheetName: 'çµæ??è³ª?‡æ?' }
+    ];
+    
+    categories.forEach(category => {
+        const categoryIndicators = indicators.filter(ind => ind.category === category.name);
+        
+        if (categoryIndicators.length === 0) return;
+        
+        // ?µå»ºè¡¨æ ¼?¸æ?
+        const tableData = [];
+        
+        // æ¨™é?è¡?
+        const headerRow = ['?‡æ?ç·¨è?', '?‡æ??ç¨±', '?‡æ?ä»?¢¼', '?«å­¸ä¸­å?'];
+        quarters.forEach(q => headerRow.push(q));
+        tableData.push(headerRow);
+        
+        // ?¸æ?è¡?
+        categoryIndicators.forEach(indicator => {
+            const row = [
+                indicator.id,
+                indicator.name,
+                indicator.code,
+                '??
+            ];
+            
+            quarters.forEach(q => {
+                row.push(indicator.quarterlyData[q] || '--');
+            });
+            
+            tableData.push(row);
+        });
+        
+        // ?µå»ºå·¥ä?è¡?
+        const sheet = XLSX.utils.aoa_to_sheet(tableData);
+        
+        // è¨­å?æ¬„å¯¬
+        const colWidths = [
+            { wch: 12 },  // ?‡æ?ç·¨è?
+            { wch: 30 },  // ?‡æ??ç¨±
+            { wch: 12 },  // ?‡æ?ä»?¢¼
+            { wch: 10 },  // ?«å­¸ä¸­å?
+            ...Array(quarters.length).fill({ wch: 10 })  // ?„å­£åº?
+        ];
+        sheet['!cols'] = colWidths;
+        
+        XLSX.utils.book_append_sheet(workbook, sheet, category.sheetName);
+    });
+    
+    // 4. ?µå»ºå®Œæ•´?¸æ?å½™ç¸½è¡?
+    const summaryData = [];
+    
+    // æ¨™é?è¡?
+    const summaryHeaderRow = ['?†é?', '?‡æ?ç·¨è?', '?‡æ??ç¨±', '?‡æ?ä»?¢¼', '?«å­¸ä¸­å?'];
+    quarters.forEach(q => summaryHeaderRow.push(q));
+    summaryData.push(summaryHeaderRow);
+    
+    // ?€?‰æ?æ¨™æ•¸??
+    categories.forEach(category => {
+        const categoryIndicators = indicators.filter(ind => ind.category === category.name);
+        
+        categoryIndicators.forEach(indicator => {
+            const row = [
+                category.name,
+                indicator.id,
+                indicator.name,
+                indicator.code,
+                '??
+            ];
+            
+            quarters.forEach(q => {
+                row.push(indicator.quarterlyData[q] || '--');
+            });
+            
+            summaryData.push(row);
+        });
+    });
+    
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    
+    // è¨­å?æ¬„å¯¬
+    summarySheet['!cols'] = [
+        { wch: 12 },  // ?†é?
+        { wch: 12 },  // ?‡æ?ç·¨è?
+        { wch: 30 },  // ?‡æ??ç¨±
+        { wch: 12 },  // ?‡æ?ä»?¢¼
+        { wch: 10 },  // ?«å­¸ä¸­å?
+        ...Array(quarters.length).fill({ wch: 10 })  // ?„å­£åº?
+    ];
+    
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'å®Œæ•´?¸æ?å½™ç¸½');
+    
+    return workbook;
+}
+
+// ?²å??¶å??¥æ?å­—ç¬¦ä¸?
+function getCurrentDateString() {
+    const now = new Date();
+    return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+}
+
+// ?´éœ²Excel?Ÿæ??Œä??³å‡½?¸åˆ°?¨å?
+window.generateExcel = generateExcel;
+window.uploadToNHI = uploadToNHI;
