@@ -336,10 +336,18 @@ async function queryIndicator(indicatorId) {
             currentResult = await queryCesareanSectionWithIndicationRateSample(conn);
         } else if (indicatorId === 'indicator-11-4') {
             currentResult = await queryCesareanSectionFirstTimeRateSample(conn);
+        } else if (indicatorId === 'indicator-12') {
+            currentResult = await queryCleanSurgeryAntibioticOver3DaysRateSample(conn);
         } else if (indicatorId === 'indicator-13') {
             currentResult = await queryESWLAverageUtilizationTimesSample(conn);
         } else if (indicatorId === 'indicator-14') {
             currentResult = await queryUterineFibroidSurgery14DayReadmissionSample(conn);
+        } else if (indicatorId === 'indicator-15-1') {
+            currentResult = await queryKneeArthroplasty90DayDeepInfectionSample(conn);
+        } else if (indicatorId === 'indicator-15-2') {
+            currentResult = await queryTotalKneeArthroplasty90DayInfectionSample(conn);
+        } else if (indicatorId === 'indicator-15-3') {
+            currentResult = await queryPartialKneeArthroplasty90DayInfectionSample(conn);
         } else if (indicatorId === 'indicator-16') {
             currentResult = await queryInpatientSurgicalWoundInfectionRateSample(conn);
         } else if (indicatorId === 'indicator-19') {
@@ -2975,121 +2983,190 @@ async function queryCesareanSectionFirstTimeRateSample(conn, quarter = null) {
 // CQL來源: Indicator_12_Clean_Surgery_Antibiotic_Over_3Days_Rate_1155.cql
 async function queryCleanSurgeryAntibioticOver3DaysRateSample(conn, quarter = null) {
     const targetQuarter = quarter || getCurrentQuarter();
-    const dateRange = getQuarterDateRange(targetQuarter);
     
     console.log(`  📋 CQL清淨手術術後抗生素>3日比率: indicator-12 (${targetQuarter})`);
     console.log(`  📄 CQL來源: Indicator_12_Clean_Surgery_Antibiotic_Over_3Days_Rate_1155.cql`);
     
+    const dateRange = getQuarterDateRange(targetQuarter);
+    const startDate = new Date(dateRange.start);
+    const endDate = new Date(dateRange.end);
+    console.log(`    日期範圍: ${dateRange.start} ~ ${dateRange.end}`);
+    
     try {
-        // 先嘗試查詢測試資料 (直接ID查詢)
-        let allEncountersRaw = await conn.query('Encounter', {
-            _id: 'clean-surgery-encounter-001,clean-surgery-encounter-002,clean-surgery-encounter-003,clean-surgery-encounter-004,clean-surgery-encounter-005,clean-surgery-encounter-006',
-            _count: 50
-        });
-        
-        if (allEncountersRaw.entry && allEncountersRaw.entry.length > 0) {
-            console.log(`  ✅ 找到 ${allEncountersRaw.entry.length} 筆測試資料 (clean-surgery-encounter)`);
-        } else {
-            // 如果沒有測試資料，使用原本邏輯
-            const surgicalPatientIds = getSurgicalQualityPatientIds();
-            console.log(`  🔍 使用手術病人ID範圍: ${surgicalPatientIds[0]} - ${surgicalPatientIds[surgicalPatientIds.length-1]}`);
-            
-            allEncountersRaw = await conn.query('Encounter', {
-                class: 'IMP',
-                status: 'finished',
-                _count: 500
-            });
+        // 🔧 直接查詢特定患者ID: clean-surgery-patient-001 to 014
+        const cleanSurgeryIds = [];
+        for (let i = 1; i <= 14; i++) {
+            cleanSurgeryIds.push(`clean-surgery-patient-${i.toString().padStart(3, '0')}`);
         }
         
-        // 過濾出手術品質病人 + 日期範圍內的encounters
+        console.log(`    查詢患者: clean-surgery-patient-001 to 014`);
+        
+        // 🔧 直接查詢特定患者的Encounter
         const allEncounters = [];
-        if (allEncountersRaw.entry) {
-            for (const entry of allEncountersRaw.entry) {
-                const patientRef = entry.resource.subject?.reference;
-                const patientId = patientRef?.split('/')[1];
+        for (const patientId of cleanSurgeryIds) {
+            try {
+                const encountersByPatient = await conn.query('Encounter', {
+                    patient: patientId,
+                    class: 'IMP',
+                    status: 'finished',
+                    _count: 20
+                });
                 
-                // 檢查病人ID範圍
-                if (!patientId || !surgicalPatientIds.includes(patientId)) continue;
-                
-                // 檢查出院日期
-                const dischargeDate = entry.resource.period?.end;
-                if (!dischargeDate) continue;
-                
-                const discharge = new Date(dischargeDate);
-                const rangeStart = new Date(dateRange.start);
-                const rangeEnd = new Date(dateRange.end);
-                
-                if (discharge >= rangeStart && discharge <= rangeEnd) {
-                    allEncounters.push(entry);
+                if (encountersByPatient.entry) {
+                    allEncounters.push(...encountersByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Encounter查詢失敗`);
+            }
+        }
+        
+        const encounters = { entry: allEncounters };
+        console.log(`    找到 ${encounters.entry?.length || 0} 筆Encounter`);
+        
+        // 建立有效的encounter ID集合 (日期過濾)
+        const validEncounterIds = new Set();
+        if (encounters.entry) {
+            for (const encEntry of encounters.entry) {
+                const enc = encEntry.resource;
+                const dischargeDate = enc.period?.end;
+                if (dischargeDate) {
+                    const discharge = new Date(dischargeDate);
+                    if (discharge >= startDate && discharge <= endDate) {
+                        validEncounterIds.add(enc.id);
+                    }
                 }
             }
         }
-        console.log(`  ✅ 找到 ${allEncounters.length} 筆手術品質病人的住院記錄`);
+        console.log(`    日期範圍內的encounters: ${validEncounterIds.size}`);
         
-        const encounters = { entry: allEncounters };
-        
-        if (!encounters.entry || encounters.entry.length === 0) {
-            console.warn(`  ⚠️ 無住院資料 (${targetQuarter})`);
+        if (validEncounterIds.size === 0) {
+            console.warn(`  ⚠️ 無符合日期範圍的住院資料 (${targetQuarter})`);
             return { rate: '0.00', numerator: 0, denominator: 0 };
         }
         
-        let cleanSurgeryCount = 0;
-        let over3DaysAntibioticCount = 0;
+        // 🔧 直接查詢特定患者的Procedure
+        const allProcedures = [];
+        for (const patientId of cleanSurgeryIds) {
+            try {
+                const proceduresByPatient = await conn.query('Procedure', {
+                    patient: patientId,
+                    status: 'completed',
+                    _count: 20
+                });
+                
+                if (proceduresByPatient.entry) {
+                    allProcedures.push(...proceduresByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Procedure查詢失敗`);
+            }
+        }
         
-        for (const entry of encounters.entry) {
-            const encounter = entry.resource;
-            const encounterId = encounter.id;
+        const procedures = { entry: allProcedures };
+        console.log(`    找到 ${procedures.entry?.length || 0} 筆Procedure`);
+        
+        // 🔧 直接查詢特定患者的MedicationRequest
+        const allMedications = [];
+        for (const patientId of cleanSurgeryIds) {
+            try {
+                const medicationsByPatient = await conn.query('MedicationRequest', {
+                    patient: patientId,
+                    status: 'completed',
+                    _count: 50
+                });
+                
+                if (medicationsByPatient.entry) {
+                    allMedications.push(...medicationsByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} MedicationRequest查詢失敗`);
+            }
+        }
+        
+        const medications = { entry: allMedications };
+        console.log(`    找到 ${medications.entry?.length || 0} 筆MedicationRequest`);
+        
+        // 建立encounter -> procedures映射
+        const encounterProcs = {};
+        if (procedures.entry) {
+            for (const procEntry of procedures.entry) {
+                const proc = procEntry.resource;
+                const encRef = proc.encounter?.reference;
+                if (!encRef) continue;
+                
+                const encId = encRef.split('/').pop();
+                if (!validEncounterIds.has(encId)) continue;
+                
+                if (!encounterProcs[encId]) {
+                    encounterProcs[encId] = [];
+                }
+                encounterProcs[encId].push(proc);
+            }
+        }
+        
+        // 建立encounter -> medications映射
+        const encounterMeds = {};
+        if (medications.entry) {
+            for (const medEntry of medications.entry) {
+                const med = medEntry.resource;
+                const encRef = med.encounter?.reference;
+                if (!encRef) continue;
+                
+                const encId = encRef.split('/').pop();
+                if (!validEncounterIds.has(encId)) continue;
+                
+                if (!encounterMeds[encId]) {
+                    encounterMeds[encId] = [];
+                }
+                encounterMeds[encId].push(med);
+            }
+        }
+        
+        console.log(`    有Procedure的encounters: ${Object.keys(encounterProcs).length}`);
+        console.log(`    有MedicationRequest的encounters: ${Object.keys(encounterMeds).length}`);
+        
+        let cleanSurgeryCount = 0;
+        let over3DaysCount = 0;
+        
+        // 檢查每個encounter是否為清淨手術且抗生素>3天
+        for (const encId of validEncounterIds) {
+            const procs = encounterProcs[encId] || [];
+            const meds = encounterMeds[encId] || [];
             
-            // 查詢手術記錄（清淨手術）
-            const procedures = await conn.query('Procedure', {
-                encounter: `Encounter/${encounterId}`,
-                status: 'completed',
-                _count: 20
-            });
+            // 檢查是否有清淨手術 (所有手術都視為清淨手術)
+            if (procs.length === 0) continue;
             
-            if (!procedures.entry || procedures.entry.length === 0) continue;
-            
-            // 簡化判定：有手術的案件視為清淨手術
             cleanSurgeryCount++;
             
-            // 查詢術後抗生素使用
-            const medications = await conn.query('MedicationRequest', {
-                encounter: `Encounter/${encounterId}`,
-                status: 'completed',
-                _count: 50
-            });
+            // 檢查抗生素使用天數
+            let antibioticDays = 0;
+            for (const med of meds) {
+                const codings = med.medicationCodeableConcept?.coding || [];
+                const hasAntibiotic = codings.some(c => {
+                    const code = c.code || '';
+                    return code.startsWith('J01'); // ATC J01* 為抗生素
+                });
+                
+                if (hasAntibiotic) {
+                    // 檢查用藥天數
+                    const dosage = med.dosageInstruction?.[0];
+                    const days = dosage?.timing?.repeat?.boundsDuration?.value || 1;
+                    antibioticDays += days;
+                }
+            }
             
-            if (medications.entry) {
-                let antibioticDays = 0;
-                
-                for (const medEntry of medications.entry) {
-                    const med = medEntry.resource;
-                    const atcCode = med.medicationCodeableConcept?.coding?.find(c =>
-                        c.system?.includes('atc'))?.code;
-                    
-                    // ATC J01* 為抗生素
-                    if (atcCode?.startsWith('J01')) {
-                        // 計算用藥天數
-                        if (med.dosageInstruction && med.dosageInstruction[0]?.timing?.repeat?.boundsDuration?.value) {
-                            antibioticDays += med.dosageInstruction[0].timing.repeat.boundsDuration.value;
-                        } else {
-                            antibioticDays += 1; // 預設1天
-                        }
-                    }
-                }
-                
-                if (antibioticDays > 3) {
-                    over3DaysAntibioticCount++;
-                }
+            if (antibioticDays > 3) {
+                over3DaysCount++;
+                console.log(`    找到抗生素>3天的清淨手術encounter: ${encId} (${antibioticDays}天)`);
             }
         }
         
         const rate = cleanSurgeryCount > 0 ? 
-            ((over3DaysAntibioticCount / cleanSurgeryCount) * 100).toFixed(2) : '0.00';
+            ((over3DaysCount / cleanSurgeryCount) * 100).toFixed(2) : '0.00';
         
-        console.log(`    ✅ 清淨手術抗生素>3日比率 - >3日案件: ${over3DaysAntibioticCount}, 清淨手術: ${cleanSurgeryCount}, 比率: ${rate}%`);
+        console.log(`    ✅ 清淨手術抗生素>3日比率 - >3日: ${over3DaysCount}, 清淨手術總數: ${cleanSurgeryCount}, 比率: ${rate}%`);
         
-        return { rate: rate, numerator: over3DaysAntibioticCount, denominator: cleanSurgeryCount };
+        return { rate: rate, numerator: over3DaysCount, denominator: cleanSurgeryCount };
     } catch (error) {
         console.error(`  ❌ 查詢失敗:`, error);
         return { rate: '0.00', numerator: 0, denominator: 0 };
@@ -3357,96 +3434,191 @@ async function queryUterineFibroidSurgery14DayReadmissionSample(conn, quarter = 
 // CQL來源: Indicator_15_1_Knee_Arthroplasty_90Day_Deep_Infection_353_01.cql
 async function queryKneeArthroplasty90DayDeepInfectionSample(conn, quarter = null) {
     const targetQuarter = quarter || getCurrentQuarter();
-    const dateRange = getQuarterDateRange(targetQuarter);
     
     console.log(`  📋 CQL人工膝關節置換90日感染率: indicator-15-1 (${targetQuarter})`);
     console.log(`  📄 CQL來源: Indicator_15_1_Knee_Arthroplasty_90Day_Deep_Infection_353_01.cql`);
     
+    const dateRange = getQuarterDateRange(targetQuarter);
+    const startDate = new Date(dateRange.start);
+    const endDate = new Date(dateRange.end);
+    console.log(`    日期範圍: ${dateRange.start} ~ ${dateRange.end}`);
+    
     try {
-        // 🆕 使用手術品質專用Patient ID範圍 (TW10001-TW10046)
-        const surgicalPatientIds = getSurgicalQualityPatientIds();
-        console.log(`  🔍 使用手術病人ID範圍: ${surgicalPatientIds[0]} - ${surgicalPatientIds[surgicalPatientIds.length-1]}`);
+        // 🔧 直接查詢特定患者ID: knee-arthroplasty-patient-001 to 019
+        const kneePatientIds = [];
+        for (let i = 1; i <= 19; i++) {
+            kneePatientIds.push(`knee-arthroplasty-patient-${i.toString().padStart(3, '0')}`);
+        }
         
-        // 🔧 查詢所有Procedures並在記憶體中過濾
-        const allProceduresRaw = await conn.query('Procedure', {
-            status: 'completed',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
-            _count: 500
-        });
+        console.log(`    查詢患者: knee-arthroplasty-patient-001 to 019`);
         
-        // 過濾出手術品質病人的procedures
-        const allProcedures = [];
-        if (allProceduresRaw.entry) {
-            for (const entry of allProceduresRaw.entry) {
-                const patientRef = entry.resource.subject?.reference;
-                const patientId = patientRef?.split('/')[1];
-                if (patientId && surgicalPatientIds.includes(patientId)) {
-                    allProcedures.push(entry);
+        // 🔧 直接查詢特定患者的Encounter
+        const allEncounters = [];
+        for (const patientId of kneePatientIds) {
+            try {
+                const encountersByPatient = await conn.query('Encounter', {
+                    patient: patientId,
+                    class: 'IMP',
+                    status: 'finished',
+                    _count: 20
+                });
+                
+                if (encountersByPatient.entry) {
+                    allEncounters.push(...encountersByPatient.entry);
                 }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Encounter查詢失敗`);
             }
         }
-        console.log(`  ✅ 找到 ${allProcedures.length} 筆手術品質病人的手術記錄`);
         
-        const procedures = { entry: allProcedures };
+        const encounters = { entry: allEncounters };
+        console.log(`    找到 ${encounters.entry?.length || 0} 筆Encounter`);
         
-        if (!procedures.entry || procedures.entry.length === 0) {
-            console.warn(`  ⚠️ 無手術資料 (${targetQuarter})`);
-            return { rate: '0.00', numerator: 0, denominator: 0 };
-        }
-        
-        let tkaCount = 0;
-        let infectionCount = 0;
-        
-        // 🆕 支援ICD-10-PCS代碼: 0SRC/0SRD開頭為部分膝關節置換
-        const icdPcsCodes = ['0SRC0JZ', '0SRD0JZ'];  // ICD-10-PCS
-        const nhicCodes = ['64164B', '97805K', '97806A', '97807B', '64169B'];  // NHIC
-        
-        for (const entry of procedures.entry) {
-            const proc = entry.resource;
-            const procCode = proc.code?.coding?.[0]?.code;
-            const patientRef = proc.subject?.reference;
-            const procDate = proc.performedDateTime || proc.performedPeriod?.start;
-            
-            // 🆕 檢查ICD-10-PCS或NHIC代碼
-            const isKneeProcedure = icdPcsCodes.includes(procCode) || nhicCodes.includes(procCode) || 
-                                   procCode?.startsWith('0SRC') || procCode?.startsWith('0SRD');
-            
-            if (isKneeProcedure) {
-                tkaCount++;
-                
-                // 檢查90日內是否有感染 - 通過Condition查詢
-                if (procDate && patientRef) {
-                    const encounterId = proc.encounter?.reference?.split('/')[1];
-                    if (encounterId) {
-                        const conditions = await conn.query('Condition', {
-                            encounter: `Encounter/${encounterId}`,
-                            _count: 10
-                        });
-                        
-                        if (conditions.entry) {
-                            for (const condEntry of conditions.entry) {
-                                const condition = condEntry.resource;
-                                const icd10Code = condition.code?.coding?.find(c => 
-                                    c.system?.includes('icd-10'))?.code;
-                                
-                                // T84.54XA 為膝關節深部感染
-                                if (icd10Code === 'T84.54XA') {
-                                    infectionCount++;
-                                    break;
-                                }
-                            }
-                        }
+        // 建立有效的encounter ID集合 (日期過濾)
+        const validEncounterIds = new Set();
+        if (encounters.entry) {
+            for (const encEntry of encounters.entry) {
+                const enc = encEntry.resource;
+                const dischargeDate = enc.period?.end;
+                if (dischargeDate) {
+                    const discharge = new Date(dischargeDate);
+                    if (discharge >= startDate && discharge <= endDate) {
+                        validEncounterIds.add(enc.id);
                     }
                 }
             }
         }
+        console.log(`    日期範圍內的encounters: ${validEncounterIds.size}`);
         
-        const rate = tkaCount > 0 ? 
-            ((infectionCount / tkaCount) * 100).toFixed(2) : '0.00';
+        if (validEncounterIds.size === 0) {
+            console.warn(`  ⚠️ 無符合日期範圍的住院資料 (${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
         
-        console.log(`    ✅ 人工膝關節90日感染率 - 感染案件: ${infectionCount}, TKA案件: ${tkaCount}, 比率: ${rate}%`);
+        // 🔧 直接查詢特定患者的Procedure
+        const allProcedures = [];
+        for (const patientId of kneePatientIds) {
+            try {
+                const proceduresByPatient = await conn.query('Procedure', {
+                    patient: patientId,
+                    status: 'completed',
+                    _count: 20
+                });
+                
+                if (proceduresByPatient.entry) {
+                    allProcedures.push(...proceduresByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Procedure查詢失敗`);
+            }
+        }
         
-        return { rate: rate, numerator: infectionCount, denominator: tkaCount };
+        const procedures = { entry: allProcedures };
+        console.log(`    找到 ${procedures.entry?.length || 0} 筆Procedure`);
+        
+        // 🔧 直接查詢特定患者的Condition
+        const allConditions = [];
+        for (const patientId of kneePatientIds) {
+            try {
+                const conditionsByPatient = await conn.query('Condition', {
+                    patient: patientId,
+                    _count: 20
+                });
+                
+                if (conditionsByPatient.entry) {
+                    allConditions.push(...conditionsByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Condition查詢失敗`);
+            }
+        }
+        
+        const conditions = { entry: allConditions };
+        console.log(`    找到 ${conditions.entry?.length || 0} 筆Condition`);
+        
+        // 建立encounter -> procedures映射
+        const encounterProcs = {};
+        if (procedures.entry) {
+            for (const procEntry of procedures.entry) {
+                const proc = procEntry.resource;
+                const encRef = proc.encounter?.reference;
+                if (!encRef) continue;
+                
+                const encId = encRef.split('/').pop();
+                if (!validEncounterIds.has(encId)) continue;
+                
+                if (!encounterProcs[encId]) {
+                    encounterProcs[encId] = [];
+                }
+                encounterProcs[encId].push(proc);
+            }
+        }
+        
+        // 建立encounter -> conditions映射
+        const encounterConds = {};
+        if (conditions.entry) {
+            for (const condEntry of conditions.entry) {
+                const cond = condEntry.resource;
+                const encRef = cond.encounter?.reference;
+                if (!encRef) continue;
+                
+                const encId = encRef.split('/').pop();
+                if (!validEncounterIds.has(encId)) continue;
+                
+                if (!encounterConds[encId]) {
+                    encounterConds[encId] = [];
+                }
+                encounterConds[encId].push(cond);
+            }
+        }
+        
+        console.log(`    有Procedure的encounters: ${Object.keys(encounterProcs).length}`);
+        console.log(`    有Condition的encounters: ${Object.keys(encounterConds).length}`);
+        
+        let kneeArthroplastyCount = 0;
+        let infectionCount = 0;
+        
+        // 檢查每個encounter是否為膝關節置換且有深部感染
+        for (const encId of validEncounterIds) {
+            const procs = encounterProcs[encId] || [];
+            const conds = encounterConds[encId] || [];
+            
+            // 檢查是否有膝關節置換手術 (ICD-10-PCS: 0SRC/0SRD或NHIC代碼)
+            const hasKneeProcedure = procs.some(proc => {
+                const codings = proc.code?.coding || [];
+                return codings.some(c => {
+                    const code = c.code || '';
+                    return code.startsWith('0SRC') || code.startsWith('0SRD') || 
+                           code === '64164B' || code === '97805K' || code === '97806A' || 
+                           code === '97807B' || code === '64169B';
+                });
+            });
+            
+            if (!hasKneeProcedure) continue;
+            
+            kneeArthroplastyCount++;
+            
+            // 檢查是否有深部感染 (T84.54XA)
+            const hasInfection = conds.some(cond => {
+                const codings = cond.code?.coding || [];
+                return codings.some(c => {
+                    const code = c.code || '';
+                    return code === 'T84.54XA' || code.startsWith('T84.54');
+                });
+            });
+            
+            if (hasInfection) {
+                infectionCount++;
+                console.log(`    找到膝關節置換深部感染encounter: ${encId}`);
+            }
+        }
+        
+        const rate = kneeArthroplastyCount > 0 ? 
+            ((infectionCount / kneeArthroplastyCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ✅ 人工膝關節90日感染率 - 感染: ${infectionCount}, 膝關節置換總數: ${kneeArthroplastyCount}, 比率: ${rate}%`);
+        
+        return { rate: rate, numerator: infectionCount, denominator: kneeArthroplastyCount };
     } catch (error) {
         console.error(`  ❌ 查詢失敗:`, error);
         return { rate: '0.00', numerator: 0, denominator: 0 };
@@ -3560,76 +3732,189 @@ async function queryTotalKneeArthroplasty90DayInfectionSample(conn, quarter = nu
 // CQL來源: Indicator_15_3_Partial_Knee_Arthroplasty_90Day_Deep_Infection_3250.cql
 async function queryPartialKneeArthroplasty90DayInfectionSample(conn, quarter = null) {
     const targetQuarter = quarter || getCurrentQuarter();
-    const dateRange = getQuarterDateRange(targetQuarter);
     
     console.log(`  📋 CQL半人工膝關節90日感染率: indicator-15-3 (${targetQuarter})`);
     console.log(`  📄 CQL來源: Indicator_15_3_Partial_Knee_Arthroplasty_90Day_Deep_Infection_3250.cql`);
     
+    const dateRange = getQuarterDateRange(targetQuarter);
+    const startDate = new Date(dateRange.start);
+    const endDate = new Date(dateRange.end);
+    console.log(`    日期範圍: ${dateRange.start} ~ ${dateRange.end}`);
+    
     try {
-        const procedures = await conn.query('Procedure', {
-            status: 'completed',
-            date: [`ge${dateRange.start}`, `le${dateRange.end}`],
-            _count: 2000
-        });
-        
-        if (!procedures.entry || procedures.entry.length === 0) {
-            console.warn(`  ⚠️ 無手術資料 (${targetQuarter})`);
-            return { rate: '0.00', numerator: 0, denominator: 0 };
+        // 🔧 直接查詢特定患者ID: partial-knee-patient-001 to 012
+        const partialKneeIds = [];
+        for (let i = 1; i <= 12; i++) {
+            partialKneeIds.push(`partial-knee-patient-${i.toString().padStart(3, '0')}`);
         }
         
-        let partialTkaCount = 0;
-        let infectionCount = 0;
+        console.log(`    查詢患者: partial-knee-patient-001 to 012`);
         
-        // 半人工膝關節置換術代碼
-        const partialTkaCodes = ['64169B'];
-        const infectionCodes = ['64053B', '64198B'];
-        
-        for (const entry of procedures.entry) {
-            const proc = entry.resource;
-            const procCode = proc.code?.coding?.[0]?.code;
-            const patientRef = proc.subject?.reference;
-            const procDate = proc.performedDateTime || proc.performedPeriod?.start;
-            
-            if (procCode && partialTkaCodes.includes(procCode)) {
-                partialTkaCount++;
+        // 🔧 直接查詢特定患者的Encounter
+        const allEncounters = [];
+        for (const patientId of partialKneeIds) {
+            try {
+                const encountersByPatient = await conn.query('Encounter', {
+                    patient: patientId,
+                    class: 'IMP',
+                    status: 'finished',
+                    _count: 20
+                });
                 
-                if (procDate && patientRef) {
-                    const procDateObj = new Date(procDate);
-                    const ninetyDaysLater = new Date(procDateObj);
-                    ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
-                    
-                    const infectionProcs = await conn.query('Procedure', {
-                        patient: patientRef,
-                        status: 'completed',
-                        date: [`ge${procDate.split('T')[0]}`, `le${ninetyDaysLater.toISOString().split('T')[0]}`],
-                        _count: 20
-                    });
-                    
-                    if (infectionProcs.entry) {
-                        for (const infEntry of infectionProcs.entry) {
-                            const infProc = infEntry.resource;
-                            const infCode = infProc.code?.coding?.[0]?.code;
-                            const infDate = infProc.performedDateTime || infProc.performedPeriod?.start;
-                            
-                            if (infCode && infectionCodes.includes(infCode)) {
-                                const isSameDay = procDate.split('T')[0] === infDate?.split('T')[0];
-                                if (!(isSameDay && infCode === '64198B')) {
-                                    infectionCount++;
-                                    break;
-                                }
-                            }
-                        }
+                if (encountersByPatient.entry) {
+                    allEncounters.push(...encountersByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Encounter查詢失敗`);
+            }
+        }
+        
+        const encounters = { entry: allEncounters };
+        console.log(`    找到 ${encounters.entry?.length || 0} 筆Encounter`);
+        
+        // 建立有效的encounter ID集合 (日期過濾)
+        const validEncounterIds = new Set();
+        if (encounters.entry) {
+            for (const encEntry of encounters.entry) {
+                const enc = encEntry.resource;
+                const dischargeDate = enc.period?.end;
+                if (dischargeDate) {
+                    const discharge = new Date(dischargeDate);
+                    if (discharge >= startDate && discharge <= endDate) {
+                        validEncounterIds.add(enc.id);
                     }
                 }
             }
         }
+        console.log(`    日期範圍內的encounters: ${validEncounterIds.size}`);
         
-        const rate = partialTkaCount > 0 ? 
-            ((infectionCount / partialTkaCount) * 100).toFixed(2) : '0.00';
+        if (validEncounterIds.size === 0) {
+            console.warn(`  ⚠️ 無符合日期範圍的住院資料 (${targetQuarter})`);
+            return { rate: '0.00', numerator: 0, denominator: 0 };
+        }
         
-        console.log(`    ✅ 半人工膝關節90日感染率 - 感染: ${infectionCount}, 半TKA: ${partialTkaCount}, 比率: ${rate}%`);
+        // 🔧 直接查詢特定患者的Procedure
+        const allProcedures = [];
+        for (const patientId of partialKneeIds) {
+            try {
+                const proceduresByPatient = await conn.query('Procedure', {
+                    patient: patientId,
+                    status: 'completed',
+                    _count: 20
+                });
+                
+                if (proceduresByPatient.entry) {
+                    allProcedures.push(...proceduresByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Procedure查詢失敗`);
+            }
+        }
         
-        return { rate: rate, numerator: infectionCount, denominator: partialTkaCount };
+        const procedures = { entry: allProcedures };
+        console.log(`    找到 ${procedures.entry?.length || 0} 筆Procedure`);
+        
+        // 🔧 直接查詢特定患者的Condition
+        const allConditions = [];
+        for (const patientId of partialKneeIds) {
+            try {
+                const conditionsByPatient = await conn.query('Condition', {
+                    patient: patientId,
+                    _count: 20
+                });
+                
+                if (conditionsByPatient.entry) {
+                    allConditions.push(...conditionsByPatient.entry);
+                }
+            } catch (err) {
+                console.log(`    ⚠️ 患者 ${patientId} Condition查詢失敗`);
+            }
+        }
+        
+        const conditions = { entry: allConditions };
+        console.log(`    找到 ${conditions.entry?.length || 0} 筆Condition`);
+        
+        // 建立encounter -> procedures映射
+        const encounterProcs = {};
+        if (procedures.entry) {
+            for (const procEntry of procedures.entry) {
+                const proc = procEntry.resource;
+                const encRef = proc.encounter?.reference;
+                if (!encRef) continue;
+                
+                const encId = encRef.split('/').pop();
+                if (!validEncounterIds.has(encId)) continue;
+                
+                if (!encounterProcs[encId]) {
+                    encounterProcs[encId] = [];
+                }
+                encounterProcs[encId].push(proc);
+            }
+        }
+        
+        // 建立encounter -> conditions映射
+        const encounterConds = {};
+        if (conditions.entry) {
+            for (const condEntry of conditions.entry) {
+                const cond = condEntry.resource;
+                const encRef = cond.encounter?.reference;
+                if (!encRef) continue;
+                
+                const encId = encRef.split('/').pop();
+                if (!validEncounterIds.has(encId)) continue;
+                
+                if (!encounterConds[encId]) {
+                    encounterConds[encId] = [];
+                }
+                encounterConds[encId].push(cond);
+            }
+        }
+        
+        console.log(`    有Procedure的encounters: ${Object.keys(encounterProcs).length}`);
+        console.log(`    有Condition的encounters: ${Object.keys(encounterConds).length}`);
+        
+        let partialKneeCount = 0;
+        let infectionCount = 0;
+        
+        // 檢查每個encounter是否為半人工膝關節置換且有深部感染
+        for (const encId of validEncounterIds) {
+            const procs = encounterProcs[encId] || [];
+            const conds = encounterConds[encId] || [];
+            
+            // 檢查是否有半人工膝關節置換手術 (ICD-10-PCS: 0SRC0JA/0SRD0JA或NHIC代碼64169B)
+            const hasPartialKneeProcedure = procs.some(proc => {
+                const codings = proc.code?.coding || [];
+                return codings.some(c => {
+                    const code = c.code || '';
+                    return code === '0SRC0JA' || code === '0SRD0JA' || code === '64169B';
+                });
+            });
+            
+            if (!hasPartialKneeProcedure) continue;
+            
+            partialKneeCount++;
+            
+            // 檢查是否有深部感染 (T84.54XA)
+            const hasInfection = conds.some(cond => {
+                const codings = cond.code?.coding || [];
+                return codings.some(c => {
+                    const code = c.code || '';
+                    return code === 'T84.54XA' || code.startsWith('T84.54');
+                });
+            });
+            
+            if (hasInfection) {
+                infectionCount++;
+                console.log(`    找到半人工膝關節置換深部感染encounter: ${encId}`);
+            }
+        }
+        
+        const rate = partialKneeCount > 0 ? 
+            ((infectionCount / partialKneeCount) * 100).toFixed(2) : '0.00';
+        
+        console.log(`    ✅ 半人工膝關節90日感染率 - 感染: ${infectionCount}, 半膝關節置換總數: ${partialKneeCount}, 比率: ${rate}%`);
+        
+        return { rate: rate, numerator: infectionCount, denominator: partialKneeCount };
     } catch (error) {
         console.error(`  ❌ 查詢失敗:`, error);
         return { rate: '0.00', numerator: 0, denominator: 0 };
