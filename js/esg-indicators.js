@@ -627,7 +627,7 @@ function toggleDemoMode() {
 
 function updateDemoModeButton() {
     if (localStorage.getItem('demoMode') === null) {
-        localStorage.setItem('demoMode', 'true');
+        localStorage.setItem('demoMode', 'false');
     }
     
     const demoMode = localStorage.getItem('demoMode') === 'true';
