@@ -3546,9 +3546,9 @@ function toggleDemoMode() {
 }
 
 function updateDemoModeButton() {
-    // 如果從未設定過，預設使用真實FHIR資料（關閉示範模式）
+    // 如果從未設定過，預設啟用示範模式
     if (localStorage.getItem('demoMode') === null) {
-        localStorage.setItem('demoMode', 'false');
+        localStorage.setItem('demoMode', 'true');
     }
     
     const demoMode = localStorage.getItem('demoMode') === 'true';
@@ -3751,7 +3751,7 @@ function uploadToNHI() {
             健保局系統連結尚未建立<br>
             連結後即可上傳醫療品質報告
         </div>
-        <button type="button" id="closeNhiDialogBtn"
+        <button onclick="this.parentElement.parentElement.remove(); document.getElementById('nhiOverlay').remove();" 
                 style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
             <i class="fas fa-check"></i> 確定
         </button>
@@ -3769,30 +3769,8 @@ function uploadToNHI() {
         z-index: 10000;
     `;
     
-    const closeDialog = function(e) {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        if (messageBox && messageBox.parentNode) {
-            messageBox.remove();
-        }
-        if (overlay && overlay.parentNode) {
-            overlay.remove();
-        }
-        return false;
-    };
-    
-    overlay.addEventListener('click', closeDialog);
-    
     document.body.appendChild(overlay);
     document.body.appendChild(messageBox);
-    
-    // 綁定按鈕事件
-    const closeBtn = document.getElementById('closeNhiDialogBtn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeDialog);
-    }
     
     console.log('顯示健保局連結提示');
 }
