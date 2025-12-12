@@ -4041,17 +4041,8 @@ async function generateExcel() {
 
 // 上傳健保局功能
 function uploadToNHI() {
-    // 建立關閉函數
-    function closeModal() {
-        const msgBox = document.getElementById('nhiMessageBox');
-        const ovl = document.getElementById('nhiOverlay');
-        if (msgBox) msgBox.remove();
-        if (ovl) ovl.remove();
-    }
-    
     // 顯示尚未連結的訊息
     const messageBox = document.createElement('div');
-    messageBox.id = 'nhiMessageBox';
     messageBox.style.cssText = `
         position: fixed;
         top: 50%;
@@ -4074,7 +4065,8 @@ function uploadToNHI() {
             健保局系統連結尚未建立<br>
             連結後即可上傳醫療品質報告
         </div>
-        <button id="nhiConfirmBtn" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
+        <button onclick="this.parentElement.parentElement.remove(); document.getElementById('nhiOverlay').remove();" 
+                style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
             <i class="fas fa-check"></i> 確定
         </button>
     `;
@@ -4089,15 +4081,10 @@ function uploadToNHI() {
         bottom: 0;
         background: rgba(0,0,0,0.5);
         z-index: 10000;
-        cursor: pointer;
     `;
     
     document.body.appendChild(overlay);
     document.body.appendChild(messageBox);
-    
-    // 緊定事件
-    document.getElementById('nhiConfirmBtn').addEventListener('click', closeModal);
-    document.getElementById('nhiOverlay').addEventListener('click', closeModal);
     
     console.log('顯示健保局連結提示');
 }

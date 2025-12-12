@@ -1,0 +1,4 @@
+
+# Large files
+*.jar
+**/fhir_data_*.json
