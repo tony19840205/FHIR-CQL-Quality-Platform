@@ -3860,9 +3860,9 @@ function toggleDemoMode() {
 }
 
 function updateDemoModeButton() {
-    // 如果從未設定過，預設啟用示範模式
+    // 如果從未設定過，預設關閉示範模式（讓評審使用 FHIR 真實資料）
     if (localStorage.getItem('demoMode') === null) {
-        localStorage.setItem('demoMode', 'true');
+        localStorage.setItem('demoMode', 'false');
     }
     
     const demoMode = localStorage.getItem('demoMode') === 'true';
