@@ -4039,10 +4039,20 @@ async function generateExcel() {
     }
 }
 
+// 關閉健保局彈窗
+function closeNHIDialog() {
+    const overlay = document.getElementById('nhiOverlay');
+    const boxes = document.querySelectorAll('[data-nhi-dialog]');
+    
+    if (overlay) overlay.remove();
+    boxes.forEach(box => box.remove());
+}
+
 // 上傳健保局功能
 function uploadToNHI() {
     // 顯示尚未連結的訊息
     const messageBox = document.createElement('div');
+    messageBox.setAttribute('data-nhi-dialog', 'true');
     messageBox.style.cssText = `
         position: fixed;
         top: 50%;
@@ -4057,6 +4067,12 @@ function uploadToNHI() {
         min-width: 400px;
     `;
     messageBox.innerHTML = `
+        <button onclick="closeNHIDialog();" 
+                style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.5rem; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;"
+                onmouseover="this.style.background='#f1f5f9'; this.style.color='#64748b';"
+                onmouseout="this.style.background='none'; this.style.color='#94a3b8';">
+            <i class="fas fa-times"></i>
+        </button>
         <div style="font-size: 1.2rem; color: #1e293b; margin-bottom: 1rem;">
             <i class="fas fa-link-slash" style="color: #f59e0b; font-size: 2rem; margin-bottom: 0.5rem;"></i>
             <div style="margin-top: 0.5rem; font-weight: 600;">尚未連結</div>
@@ -4065,7 +4081,7 @@ function uploadToNHI() {
             健保局系統連結尚未建立<br>
             連結後即可上傳醫療品質報告
         </div>
-        <button onclick="this.parentElement.parentElement.remove(); document.getElementById('nhiOverlay').remove();" 
+        <button onclick="closeNHIDialog();" 
                 style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
             <i class="fas fa-check"></i> 確定
         </button>
@@ -4082,6 +4098,7 @@ function uploadToNHI() {
         background: rgba(0,0,0,0.5);
         z-index: 10000;
     `;
+    overlay.onclick = closeNHIDialog;
     
     document.body.appendChild(overlay);
     document.body.appendChild(messageBox);
