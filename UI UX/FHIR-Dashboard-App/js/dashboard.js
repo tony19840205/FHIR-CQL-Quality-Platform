@@ -1,0 +1,1688 @@
+// ========== 疾管儀表板邏輯 ==========
+
+let trendChart, sourceChart, ageChart;
+let currentResults = {};
+
+// 頁面載入
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('========================================');
+    console.log('疾管儀表板已載入');
+    console.log('========================================');
+    
+    // 初始化所有卡片顯示為 0
+    initializeOverviewCards();
+    
+    // 從 localStorage 載入 FHIR 連線設定
+    const savedServer = localStorage.getItem('fhirServer');
+    const savedToken = localStorage.getItem('authToken');
+    
+    console.log('📡 從 localStorage 載入設定:');
+    console.log('  - Server:', savedServer);
+    console.log('  - Token:', savedToken ? '已設定' : '未設定');
+    
+    // 等待 fhirConnection 初始化
+    setTimeout(() => {
+        // 創建全域 FHIR 連線實例
+        if (typeof FHIRConnection !== 'undefined') {
+            window.fhirConnection = new FHIRConnection();
+            
+            // 如果有儲存的伺服器設定，直接使用
+            if (savedServer) {
+                window.fhirConnection.serverUrl = savedServer;
+                window.fhirConnection.authToken = savedToken || '';
+                window.fhirConnection.isConnected = true;
+                
+                console.log('✅ 已從 localStorage 恢復連線設定');
+                console.log('   Server URL:', savedServer);
+            }
+        }
+        
+        // 檢查 FHIR 連線
+        checkFHIRConnection();
+        
+        // 初始化 CQL Engine
+        if (window.fhirConnection && window.fhirConnection.isConnected) {
+            window.cqlEngine = new CQLEngine(window.fhirConnection);
+            console.log('✓ CQL Engine 已初始化');
+            
+            // 不再自動執行查詢,由使用者手動點擊
+            console.log('ℹ️ 請點擊各疾病卡片的"執行查詢"按鈕開始查詢');
+        } else {
+            console.warn('⚠ FHIR 連線未建立，請先到首頁設定連線');
+        }
+    }, 200);
+    
+    // 初始化圖表
+    initCharts();
+});
+
+// 初始化總覽卡片
+function initializeOverviewCards() {
+    const cards = ['covid', 'flu', 'conjunctivitis', 'entero', 'diarrhea'];
+    
+    cards.forEach(card => {
+        // 初始化總人數顯示
+        const totalElement = document.getElementById(`${card}Total`);
+        if (totalElement) {
+            totalElement.textContent = '--';
+            console.log(`初始化卡片: ${card}Total = --`);
+        }
+    });
+}
+
+// 檢查 FHIR 連線狀態
+async function checkFHIRConnection() {
+    console.log('📡 檢查 FHIR 連線狀態...');
+    const banner = document.getElementById('connectionBanner');
+    const quickTestSection = document.getElementById('quickTestSection');
+    
+    // 等待 fhirConnection 初始化
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    if (!window.fhirConnection || !window.fhirConnection.serverUrl) {
+        console.warn('⚠ FHIR 伺服器未連線或未設定');
+        if (banner) banner.classList.add('show');
+        if (quickTestSection) quickTestSection.style.display = 'none';
+        // 禁用所有執行按鈕
+        disableAllButtons();
+    } else {
+        console.log('✅ FHIR 伺服器已連線:', window.fhirConnection.serverUrl);
+        if (banner) banner.classList.remove('show');
+        if (quickTestSection) quickTestSection.style.display = 'block';
+        
+        // 啟用所有按鈕
+        enableAllButtons();
+        
+        // 自動執行快速測試
+        setTimeout(() => testFHIRData(), 500);
+    }
+}
+
+// 自動測試所有 CQL（使用真實 FHIR 資料）
+async function testAllCQL() {
+    console.log('\n========================================');
+    console.log('🧪 開始自動執行 COVID-19 查詢（真實資料）');
+    console.log('========================================\n');
+    
+    // 只執行 COVID-19
+    const diseases = ['covid19'];
+    const diseaseNames = {
+        'covid19': 'COVID-19'
+    };
+    
+    // 顯示整體進度
+    console.log(`📊 將從 FHIR 伺服器查詢真實資料...`);
+    
+    // 先查詢一次 FHIR 取得基礎資料（真實資料來源）
+    let baseResults = null;
+    try {
+        const currentServer = localStorage.getItem('fhirServer');
+        console.log('🔍 正在從 FHIR 伺服器取得真實資料...');
+        console.log(`📡 連接的伺服器: ${currentServer}`);
+        
+        baseResults = await window.cqlEngine.executeCQL('covid19');
+        
+        const realPatients = baseResults.patients?.length || 0;
+        const realEncounters = baseResults.encounters?.length || 0;
+        const realConditions = baseResults.conditions?.length || 0;
+        const realObservations = baseResults.observations?.length || 0;
+        
+        console.log('✅ 真實 FHIR 資料已取得（來自伺服器）:');
+        console.log(`   患者: ${realPatients} 位`);
+        console.log(`   就診記錄: ${realEncounters} 筆`);
+        console.log(`   診斷記錄: ${realConditions} 筆`);
+        console.log(`   檢驗記錄: ${realObservations} 筆`);
+        console.log(`   資料來源: ${currentServer}`);
+        console.log(`   ⚠️ 注意：這是從伺服器實際查詢到的真實數據\n`);
+        
+        // 如果沒有資料，顯示警告
+        if (realPatients === 0 && realEncounters === 0) {
+            console.warn('⚠️⚠️⚠️ FHIR 伺服器沒有任何資料！');
+            console.warn('   可能原因：');
+            console.warn('   1. 伺服器是空的（沒有上傳測試資料）');
+            console.warn('   2. CQL 查詢條件太嚴格（沒有符合的病例）');
+            console.warn('   3. 伺服器連線有問題');
+            console.warn('   建議：切換到 HAPI FHIR R4 測試伺服器');
+        }
+    } catch (error) {
+        console.error('❌ 無法從 FHIR 伺服器取得資料:', error);
+        console.error('   錯誤訊息:', error.message);
+        console.error('   請檢查：');
+        console.error('   1. 伺服器 URL 是否正確');
+        console.error('   2. 網路連線是否正常');
+        console.error('   3. 伺服器是否支援 FHIR R4');
+        return;
+    }
+    
+    // 只處理 COVID-19
+    const disease = 'covid19';
+    console.log(`\n▶️ 處理 ${diseaseNames[disease]}...`);
+    
+    try {
+        // 顯示實際從 FHIR 伺服器取得的數據
+        const encountersCount = baseResults.encounters?.length || 0;
+        const patientsCount = baseResults.patients?.length || 0;
+        
+        // 計算今天的真實新增數（檢查 encounters 的日期）
+        const today = new Date();
+        const todayDateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        let todayNewCases = 0;
+        if (baseResults.encounters) {
+            baseResults.encounters.forEach(encounter => {
+                const encounterDate = encounter.period?.start || encounter.period?.end;
+                if (encounterDate) {
+                    const encDateStr = encounterDate.split('T')[0]; // 只比較日期部分
+                    if (encDateStr === todayDateStr) {
+                        todayNewCases++;
+                    }
+                }
+            });
+        }
+        
+        console.log(`📅 今天日期: ${todayDateStr}`);
+        console.log(`📅 今天新增: ${todayNewCases} 筆（實際統計）`);
+        
+        // 統計所有年份的就診記錄分布
+        const yearDistribution = {};
+        if (baseResults.encounters) {
+            baseResults.encounters.forEach(enc => {
+                const encDate = enc.period?.start || enc.period?.end;
+                if (encDate) {
+                    const year = new Date(encDate).getFullYear();
+                    yearDistribution[year] = (yearDistribution[year] || 0) + 1;
+                }
+            });
+        }
+        
+        console.log(`📊 就診記錄年份分布:`, yearDistribution);
+        
+        // 計算年度患者分布（和圖二一樣的邏輯）
+        const patientYearMap = new Map();
+        
+        if (baseResults.encounters && baseResults.patients) {
+            baseResults.encounters.forEach(encounter => {
+                const patientRef = encounter.subject?.reference;
+                if (!patientRef) return;
+                
+                const patientId = patientRef.split('/').pop();
+                const encDate = encounter.period?.start || encounter.period?.end;
+                if (!encDate) return;
+                
+                const year = new Date(encDate).getFullYear();
+                if (!patientYearMap.has(patientId)) {
+                    patientYearMap.set(patientId, new Set());
+                }
+                patientYearMap.get(patientId).add(year);
+            });
+        }
+        
+        // 收集所有年份並統計患者數
+        const allYearsMap = new Map(); // year -> patient count
+        
+        patientYearMap.forEach((years) => {
+            years.forEach(year => {
+                if (!allYearsMap.has(year)) {
+                    allYearsMap.set(year, 0);
+                }
+                allYearsMap.set(year, allYearsMap.get(year) + 1);
+            });
+        });
+        
+        // 按年份排序
+        const sortedYears = Array.from(allYearsMap.keys()).sort((a, b) => a - b);
+        
+        console.log(`\n✅ ${diseaseNames[disease]} 年度患者分布:`);
+        console.log(`======================================`);
+        console.log(`📊 總患者數: ${patientsCount} 位`);
+        console.log(`📅 總就診記錄: ${encountersCount} 筆`);
+        console.log(`📆 實際資料年份範圍: ${sortedYears[0] || '無'} ~ ${sortedYears[sortedYears.length - 1] || '無'}`);
+        console.log(`📈 年度分布:`);
+        sortedYears.forEach(year => {
+            console.log(`   ${year}年: ${allYearsMap.get(year)} 人`);
+        });
+        console.log(`🌐 資料來源: ${window.fhirConnection.getServerUrl()}`);
+        console.log(`======================================\n`);
+        
+        // 取得最近兩個年份的資料（如果有的話）
+        let year1 = 2024, year2 = 2025; // 預設值
+        let year1Count = 0, year2Count = 0;
+        
+        if (sortedYears.length >= 2) {
+            // 使用實際資料中的最近兩年
+            year2 = sortedYears[sortedYears.length - 1]; // 最新年份
+            year1 = sortedYears[sortedYears.length - 2]; // 次新年份
+            year2Count = allYearsMap.get(year2) || 0;
+            year1Count = allYearsMap.get(year1) || 0;
+        } else if (sortedYears.length === 1) {
+            // 只有一個年份
+            year1 = sortedYears[0];
+            year1Count = allYearsMap.get(year1) || 0;
+            year2 = year1 + 1; // 下一年（可能沒資料）
+            year2Count = 0;
+        }
+        
+        console.log(`\n🚀 準備調用 updateOverviewCardDirect:`);
+        console.log(`   - disease: ${disease}`);
+        console.log(`   - patientsCount (總患者): ${patientsCount}`);
+        console.log(`   - encountersCount: ${encountersCount}`);
+        console.log(`   - todayNewCases: ${todayNewCases}`);
+        console.log(`   - ${year1}年患者: ${year1Count}`);
+        console.log(`   - ${year2}年患者: ${year2Count}`);
+        
+        // 修改：第一個參數改為總患者數而非就診次數
+        updateOverviewCardDirect(disease, patientsCount, todayNewCases, year1Count, year2Count, year1, year2);
+        
+        // 儲存結果（包含實際年份資訊）
+        currentResults[disease] = {
+            ...baseResults,
+            totalCases: encountersCount,
+            newCasesToday: todayNewCases,
+            patientsCount: patientsCount,
+            actualYear1: year1,
+            actualYear2: year2,
+            yearDistribution: yearDistribution
+        };
+        
+        // 更新日期範圍顯示
+        updateDateRange(currentResults[disease]);
+    } catch (error) {
+        console.error(`❌ ${diseaseNames[disease]} 處理失敗:`, error);
+    }
+    
+    console.log('\n========================================');
+    console.log('🏁 COVID-19 查詢完成！');
+    console.log('========================================\n');
+}
+
+// 測試 FHIR 伺服器資料
+async function testFHIRData() {
+    const testResults = document.getElementById('testResults');
+    if (!testResults) return;
+    
+    testResults.innerHTML = '<p style="color: #2563eb;"><i class="fas fa-spinner fa-spin"></i> 正在測試...</p>';
+    
+    const conn = window.fhirConnection || fhirConnection;
+    
+    if (!conn || !conn.isServerConnected()) {
+        testResults.innerHTML = '<p style="color: #ef4444;">請先設定 FHIR 伺服器連線</p>';
+        return;
+    }
+    
+    const results = {
+        patient: 0,
+        encounter: 0,
+        condition: 0,
+        observation: 0
+    };
+    
+    try {
+        // 測試各種資源
+        const tests = [
+            { name: 'Patient', key: 'patient' },
+            { name: 'Encounter', key: 'encounter' },
+            { name: 'Condition', key: 'condition' },
+            { name: 'Observation', key: 'observation' }
+        ];
+        
+        for (const test of tests) {
+            try {
+                const data = await conn.query(test.name, { _count: 10 });
+                if (data.entry && data.entry.length > 0) {
+                    results[test.key] = data.entry.length;
+                } else if (data.total !== undefined) {
+                    results[test.key] = data.total;
+                }
+                console.log(`${test.name}: ${results[test.key]} 筆`);
+            } catch (error) {
+                console.error(`${test.name} 查詢失敗:`, error);
+            }
+        }
+        
+        // 顯示結果
+        const hasData = Object.values(results).some(v => v > 0);
+        
+        if (hasData) {
+            testResults.innerHTML = `
+                <div style="background: #d1fae5; padding: 1rem; border-radius: 8px; color: #065f46;">
+                    <p style="font-weight: 600; margin-bottom: 0.5rem;">✓ 伺服器資料可用</p>
+                    <ul style="margin: 0; padding-left: 1.5rem;">
+                        <li>患者 (Patient): ${results.patient} 筆</li>
+                        <li>就診記錄 (Encounter): ${results.encounter} 筆</li>
+                        <li>診斷 (Condition): ${results.condition} 筆</li>
+                        <li>檢驗 (Observation): ${results.observation} 筆</li>
+                    </ul>
+                </div>
+            `;
+        } else {
+            testResults.innerHTML = `
+                <div style="background: #fef3c7; padding: 1rem; border-radius: 8px; color: #92400e;">
+                    <p style="font-weight: 600; margin-bottom: 0.5rem;">⚠ 伺服器沒有資料</p>
+                    <p style="margin: 0; font-size: 0.9rem;">此 FHIR 伺服器目前沒有可用的醫療資料。建議切換到其他測試伺服器（如 HAPI FHIR）。</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        testResults.innerHTML = `
+            <div style="background: #fee2e2; padding: 1rem; border-radius: 8px; color: #991b1b;">
+                <p style="font-weight: 600;">✗ 測試失敗</p>
+                <p style="margin: 0; font-size: 0.9rem;">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// 禁用所有執行按鈕
+function disableAllButtons() {
+    const buttons = document.querySelectorAll('.btn-execute');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-lock"></i> 需要連線';
+    });
+}
+
+// 啟用所有執行按鈕
+function enableAllButtons() {
+    const buttons = document.querySelectorAll('.btn-execute');
+    buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> 執行查詢';
+    });
+}
+
+// 執行 CQL 查詢
+// ========== 備份：原始版本 (如需復原請取消註解並註解新版) ==========
+// window.executeCQL_BACKUP = async function(diseaseType) { ... }
+// ========== 備份結束 ==========
+
+// 將 executeCQL 定義為全域函數（新版：漸進式計數 + 防重複點擊）
+window.executeCQL = async function(diseaseType) {
+    console.log('========================================');
+    console.log(`🚀 executeCQL 被調用! 疾病類型: ${diseaseType}`);
+    console.log('========================================');
+    
+    // 使用 window.fhirConnection 確保引用正確
+    const conn = window.fhirConnection || fhirConnection;
+    
+    // 檢查連線
+    if (!conn || !conn.isServerConnected()) {
+        showNotification('請先在首頁設定 FHIR 伺服器連線', 'error');
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // 確保 CQL Engine 已初始化
+    if (!window.cqlEngine) {
+        window.cqlEngine = new CQLEngine(conn);
+    }
+    
+    // ID 映射
+    const btnMap = {
+        'covid19': 'btnCovid',
+        'influenza': 'btnInfluenza',
+        'conjunctivitis': 'btnConjunctivitis',
+        'enterovirus': 'btnEnterovirus',
+        'diarrhea': 'btnDiarrhea'
+    };
+    
+    const statusMap = {
+        'covid19': 'statusCovid',
+        'influenza': 'statusInfluenza',
+        'conjunctivitis': 'statusConjunctivitis',
+        'enterovirus': 'statusEnterovirus',
+        'diarrhea': 'statusDiarrhea'
+    };
+    
+    const btn = document.getElementById(btnMap[diseaseType]);
+    const status = document.getElementById(statusMap[diseaseType]);
+    
+    if (!btn) {
+        console.error('找不到按鈕元素');
+        return;
+    }
+    
+    // 🔒 防重複點擊
+    if (btn.disabled) {
+        console.warn('⚠️ 查詢進行中，請勿重複點擊');
+        return;
+    }
+    
+    // 設定按鈕為載入狀態
+    btn.disabled = true;
+    btn.classList.add('loading');
+    
+    // 🆕 漸進式計數動畫（模擬撈取資料）
+    let count = 0;
+    let countInterval = setInterval(() => {
+        count += Math.floor(Math.random() * 80) + 40;  // 每次增加 40-120 筆
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 已撈取 ${count} 筆`;
+    }, 150);  // 每 150ms 更新一次
+    
+    try {
+        // 執行 CQL 查詢
+        const currentServer = localStorage.getItem('fhirServer');
+        console.log(`📡 從 ${currentServer} 執行查詢...`);
+        
+        const results = await window.cqlEngine.executeCQL(diseaseType);
+        
+        // 🆕 清除計數動畫
+        clearInterval(countInterval);
+        
+        // 🆕 顯示實際資料筆數
+        const actualCount = results.encounters?.length || 0;
+        btn.innerHTML = `<i class="fas fa-check"></i> 完成 (${actualCount} 筆)`;
+        
+        console.log('📊 CQL 執行結果:', results);
+        console.log(`📊 患者數: ${results.patients?.length || 0} 位`);
+        console.log(`📊 就診記錄: ${results.encounters?.length || 0} 筆`);
+        console.log(`📊 資料來源: ${currentServer}`);
+        
+        // 儲存結果
+        currentResults[diseaseType] = results;
+        
+        // 計算唯一患者數：從encounters提取所有唯一的patient reference
+        // 這樣才能與詳細報告的計算一致（詳細報告也是從encounters統計患者）
+        const uniquePatients = new Set();
+        if (results.encounters && results.encounters.length > 0) {
+            results.encounters.forEach(encounter => {
+                const patientRef = encounter.subject?.reference;
+                if (patientRef) {
+                    const patientId = patientRef.split('/').pop();
+                    uniquePatients.add(patientId);
+                }
+            });
+        }
+        
+        const totalPatients = uniquePatients.size;
+        console.log(`🎯 該疾病的總患者數: ${totalPatients} 位（從 ${results.encounters?.length || 0} 筆encounters提取）`);
+        console.log(`📋 診斷記錄數: ${results.conditions?.length || 0} 筆`);
+        
+        updateCardTotal(diseaseType, totalPatients);
+        
+        showNotification(`${getDiseaseDisplayName(diseaseType)} 查詢完成 - ${actualCount} 筆資料`, 'success');
+        
+        // 查詢完成後自動顯示詳細報告
+        setTimeout(() => {
+            showDetailReport(diseaseType);
+        }, 500);
+        
+    } catch (error) {
+        console.error('CQL 執行錯誤:', error);
+        
+        // 🆕 清除計數動畫
+        clearInterval(countInterval);
+        
+        // 🆕 顯示錯誤狀態
+        btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 查詢失敗';
+        showNotification(`查詢失敗: ${error.message}`, 'error');
+        
+    } finally {
+        // 🆕 延遲 2 秒後恢復按鈕（讓用戶看到完成狀態）
+        setTimeout(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                btn.innerHTML = '<i class="fas fa-play"></i> 執行查詢';
+            }
+        }, 2000);
+    }
+};
+
+// 更新總覽卡片
+function updateOverviewCard(diseaseType, results) {
+    console.log('\n========== updateOverviewCard 開始 ==========');
+    console.log('疾病類型:', diseaseType);
+    console.log('收到的 results:', results);
+    console.log('results.totalCases:', results?.totalCases);
+    
+    // ID 映射 - 修正名稱對應
+    const idMap = {
+        'covid19': 'covid',
+        'influenza': 'flu',
+        'dengue': 'dengue',
+        'enterovirus': 'entero',
+        'diarrhea': 'diarrhea'
+    };
+    
+    const cardId = idMap[diseaseType] || diseaseType;
+    const totalId = `${cardId}Total`;
+    const trendId = `${cardId}Trend`;
+    
+    const totalElement = document.getElementById(totalId);
+    const trendElement = document.getElementById(trendId);
+    
+    console.log(`更新卡片: ${diseaseType} → ${cardId}`, {
+        totalId,
+        trendId,
+        totalCases: results.totalCases,
+        newCasesToday: results.newCasesToday,
+        totalElement: !!totalElement,
+        trendElement: !!trendElement
+    });
+    
+    if (totalElement) {
+        // 檢查是否有資料
+        const caseCount = results.totalCases || 0;
+        
+        if (caseCount === 0 && results.queriedButEmpty) {
+            // 如果查詢過但沒有資料，顯示"資料庫無資料"
+            totalElement.innerHTML = '<div class="no-data-message" style="font-size: 0.9rem; color: #94a3b8;"><i class="fas fa-database"></i> 資料庫無資料</div>';
+            console.log(`✓ 已顯示無資料訊息 ${totalId}`);
+        } else {
+            // 有資料時正常顯示
+            totalElement.textContent = formatNumber(caseCount);
+            console.log(`✓ 已更新 ${totalId} = ${caseCount}`);
+            
+            // 如果有數據才做動畫
+            if (caseCount > 0) {
+                setTimeout(() => animateValue(totalElement, 0, caseCount, 1000), 100);
+            }
+        }
+    } else {
+        console.warn(`✗ 找不到元素: ${totalId}`);
+    }
+    
+    if (trendElement) {
+        const trendSpan = trendElement.querySelector('span');
+        if (trendSpan) {
+            const newCases = results.newCasesToday || 0;
+            trendSpan.textContent = newCases;
+            console.log(`✓ 已更新 ${trendId} span = ${newCases}`);
+        }
+        
+        // 根據趨勢更新圖標
+        const trendIcon = trendElement.querySelector('i');
+        if (trendIcon && results.newCasesToday > 0) {
+            trendIcon.className = 'fas fa-arrow-up';
+            trendElement.style.color = '#10b981';
+        } else if (trendIcon) {
+            trendIcon.className = 'fas fa-minus';
+            trendElement.style.color = '#64748b';
+        }
+    } else {
+        console.warn(`✗ 找不到元素: ${trendId}`);
+    }
+    
+    console.log('========== updateOverviewCard 結束 ==========\n');
+}
+
+// 直接更新卡片（簡化版本）
+function updateOverviewCardDirect(diseaseType, totalCases, newCases, patientsYear1 = 0, patientsYear2 = 0, year1 = 2024, year2 = 2025) {
+    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`🎯 updateOverviewCardDirect 被調用！`);
+    console.log(`   疾病類型: ${diseaseType}`);
+    console.log(`   總患者數: ${totalCases}`);
+    console.log(`   新增: ${newCases}`);
+    console.log(`   ${year1}年患者: ${patientsYear1}`);
+    console.log(`   ${year2}年患者: ${patientsYear2}`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    
+    const idMap = {
+        'covid19': 'covid',
+        'influenza': 'flu',
+        'dengue': 'dengue',
+        'enterovirus': 'entero',
+        'diarrhea': 'diarrhea'
+    };
+    
+    const cardId = idMap[diseaseType] || diseaseType;
+    const totalId = `${cardId}Total`;
+    const year1Id = `${cardId}2024`;
+    const year2Id = `${cardId}2025`;
+    const year1LabelId = `${cardId}Year1Label`;
+    const year2LabelId = `${cardId}Year2Label`;
+    const trendId = `${cardId}Trend`;
+    
+    // 更新總患者數
+    const totalElement = document.getElementById(totalId);
+    if (totalElement) {
+        totalElement.textContent = formatNumber(totalCases);
+        console.log(`✅ 成功更新 ${totalId} = ${totalCases}`);
+    } else {
+        console.error(`❌ 找不到元素: ${totalId}`);
+    }
+    
+    console.log(`📝 目標元素 ID:`);
+    console.log(`   - ${year1}年元素 ID: ${year1Id}`);
+    console.log(`   - ${year2}年元素 ID: ${year2Id}`);
+    
+    // 更新年份標籤（如果存在）
+    const year1Label = document.querySelector(`#${year1Id}`);
+    const year2Label = document.querySelector(`#${year2Id}`);
+    
+    if (year1Label && year1Label.parentElement) {
+        const labelElement = year1Label.parentElement.querySelector('.year-label');
+        if (labelElement) {
+            labelElement.textContent = `${year1}年`;
+        }
+    }
+    
+    if (year2Label && year2Label.parentElement) {
+        const labelElement = year2Label.parentElement.querySelector('.year-label');
+        if (labelElement) {
+            labelElement.textContent = `${year2}年`;
+        }
+    }
+    
+    // 更新第一年人數
+    const year1Element = document.getElementById(year1Id);
+    console.log(`🔍 查找元素: ${year1Id}`);
+    console.log(`   元素存在: ${year1Element !== null}`);
+    if (year1Element) {
+        const formattedValue = formatNumber(patientsYear1);
+        console.log(`   原始值: ${patientsYear1}`);
+        console.log(`   格式化值: ${formattedValue}`);
+        console.log(`   當前內容: "${year1Element.textContent}"`);
+        year1Element.textContent = formattedValue;
+        console.log(`   更新後內容: "${year1Element.textContent}"`);
+        console.log(`✅ 成功更新 ${year1Id} = ${patientsYear1}`);
+    } else {
+        console.error(`❌ 找不到元素: ${year1Id}`);
+    }
+    
+    // 更新第二年人數
+    const year2Element = document.getElementById(year2Id);
+    console.log(`🔍 查找元素: ${year2Id}`);
+    console.log(`   元素存在: ${year2Element !== null}`);
+    if (year2Element) {
+        const formattedValue = formatNumber(patientsYear2);
+        console.log(`   原始值: ${patientsYear2}`);
+        console.log(`   格式化值: ${formattedValue}`);
+        console.log(`   當前內容: "${year2Element.textContent}"`);
+        year2Element.textContent = formattedValue;
+        console.log(`   更新後內容: "${year2Element.textContent}"`);
+        console.log(`✅ 成功更新 ${year2Id} = ${patientsYear2}`);
+    } else {
+        console.error(`❌ 找不到元素: ${year2Id}`);
+    }
+    
+    // 更新新增數
+    const trendElement = document.getElementById(trendId);
+    if (trendElement) {
+        const trendSpan = trendElement.querySelector('span');
+        if (trendSpan) {
+            trendSpan.textContent = newCases;
+            console.log(`✅ 成功更新 ${trendId} span = ${newCases}`);
+        }
+    } else {
+        console.error(`❌ 找不到元素: ${trendId}`);
+    }
+    
+    // 更新日期範圍
+    const dateRangeId = `${cardId}DateRange`;
+    const dateRangeElement = document.getElementById(dateRangeId);
+    if (dateRangeElement) {
+        const dateRange = calculateDateRange();
+        dateRangeElement.textContent = dateRange;
+        console.log(`✅ 成功更新 ${dateRangeId} = ${dateRange}`);
+    } else {
+        console.error(`❌ 找不到元素: ${dateRangeId}`);
+    }
+}
+
+// 計算日期範圍（2年回溯到今天）
+function calculateDateRange() {
+    // 不再限制日期，顯示全部資料
+    return '資料範圍: 全部資料';
+}
+
+// 更新卡片總人數（新版簡化函數）
+function updateCardTotal(diseaseType, totalCount) {
+    const idMap = {
+        'covid19': 'covid',
+        'influenza': 'flu',
+        'conjunctivitis': 'conjunctivitis',
+        'enterovirus': 'entero',
+        'diarrhea': 'diarrhea'
+    };
+    
+    const cardId = idMap[diseaseType] || diseaseType;
+    const totalId = `${cardId}Total`;
+    const totalElement = document.getElementById(totalId);
+    
+    if (totalElement) {
+        if (totalCount === 0 || totalCount === null || totalCount === undefined) {
+            totalElement.textContent = '資料庫無資料';
+            totalElement.classList.add('no-data');
+        } else {
+            totalElement.textContent = formatNumber(totalCount);
+            totalElement.classList.remove('no-data');
+        }
+        console.log(`✅ 更新 ${totalId} = ${totalCount || '資料庫無資料'}`);
+    } else {
+        console.error(`❌ 找不到元素: ${totalId}`);
+    }
+}
+
+// 更新統計摘要（顯示真實 FHIR 查詢結果）
+function updateStatsSummary(results) {
+    console.log('📊 更新統計摘要（真實資料）:', results);
+    
+    const summaryPatients = document.getElementById('summaryPatients');
+    const summaryEncounters = document.getElementById('summaryEncounters');
+    const summaryConditions = document.getElementById('summaryConditions');
+    const summaryObservations = document.getElementById('summaryObservations');
+    
+    // 使用真實從 FHIR 查詢到的數量
+    const patientsCount = results.patients?.length || 0;
+    const encountersCount = results.encounters?.length || 0;
+    const conditionsCount = results.conditions?.length || 0;
+    const observationsCount = results.observations?.length || 0;
+    
+    console.log(`  ✓ 真實數據: P=${patientsCount}, E=${encountersCount}, C=${conditionsCount}, O=${observationsCount}`);
+    
+    if (summaryPatients) {
+        summaryPatients.textContent = formatNumber(patientsCount);
+    }
+    if (summaryEncounters) {
+        summaryEncounters.textContent = formatNumber(encountersCount);
+    }
+    if (summaryConditions) {
+        summaryConditions.textContent = formatNumber(conditionsCount);
+    }
+    if (summaryObservations) {
+        summaryObservations.textContent = formatNumber(observationsCount);
+    }
+}
+
+function animateValue(element, start, end, duration) {
+    if (end === 0) {
+        element.textContent = '0';
+        return;
+    }
+    
+    const range = end - start;
+    const increment = range / (duration / 16);
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= end) {
+            element.textContent = formatNumber(end);
+            clearInterval(timer);
+        } else {
+            element.textContent = formatNumber(Math.floor(current));
+        }
+    }, 16);
+}
+
+// 初始化圖表
+function initCharts() {
+    const trendCtx = document.getElementById('trendChart');
+    const sourceCtx = document.getElementById('sourceChart');
+    const ageCtx = document.getElementById('ageChart');
+    
+    if (trendCtx) {
+        trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: '病例數',
+                    data: [],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    if (sourceCtx) {
+        sourceChart = new Chart(sourceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['急診', '住院', '門診'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    if (ageCtx) {
+        ageChart = new Chart(ageCtx, {
+            type: 'bar',
+            data: {
+                labels: ['0-10', '11-20', '21-40', '41-60', '60+'],
+                datasets: [{
+                    label: '病例數',
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: '#8b5cf6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// 更新圖表
+function updateCharts(results) {
+    // 更新趨勢圖
+    if (trendChart && results.trendData) {
+        trendChart.data.labels = results.trendData.map(d => d.date);
+        trendChart.data.datasets[0].data = results.trendData.map(d => d.cases);
+        trendChart.update();
+    }
+    
+    // 更新來源圖
+    if (sourceChart && results.summary) {
+        sourceChart.data.datasets[0].data = [
+            results.summary.emergency,
+            results.summary.inpatient,
+            results.summary.outpatient
+        ];
+        sourceChart.update();
+    }
+    
+    // 更新年齡圖
+    if (ageChart && results.ageDistribution) {
+        const ageData = Object.values(results.ageDistribution);
+        ageChart.data.datasets[0].data = ageData;
+        ageChart.update();
+    }
+}
+
+// 更新資料表
+function updateResultsTable(diseaseType, results) {
+    const tbody = document.getElementById('resultsTableBody');
+    tbody.innerHTML = '';
+    
+    console.log('更新資料表:', {
+        diseaseType,
+        encountersCount: results.encounters?.length,
+        conditionsCount: results.conditions?.length
+    });
+    
+    // 優先顯示就診記錄
+    if (results.encounters && results.encounters.length > 0) {
+        // 顯示前50筆
+        results.encounters.slice(0, 50).forEach((encounter, index) => {
+            const row = tbody.insertRow();
+            
+            // 嘗試找對應的診斷
+            let diagnosisCode = '--';
+            let diagnosisDesc = '--';
+            
+            if (results.conditions && results.conditions.length > 0) {
+                const condition = results.conditions[index % results.conditions.length];
+                if (condition.code?.coding?.[0]) {
+                    diagnosisCode = condition.code.coding[0].code || '--';
+                    diagnosisDesc = condition.code.coding[0].display || condition.code.text || '--';
+                }
+            }
+            
+            row.innerHTML = `
+                <td><strong>${getDiseaseDisplayName(diseaseType)}</strong></td>
+                <td>${encounter.date}</td>
+                <td><span class="badge badge-${encounter.type}">${getEncounterTypeDisplay(encounter.type)}</span></td>
+                <td><code>${diagnosisCode}</code></td>
+                <td>${diagnosisDesc}</td>
+                <td>${results.observations?.length > 0 ? '有檢驗' : '--'}</td>
+                <td><span class="badge ${getStatusBadgeClass(encounter.status)}">${encounter.status}</span></td>
+            `;
+        });
+        
+        console.log(`✓ 已顯示 ${Math.min(50, results.encounters.length)} 筆就診記錄`);
+    } 
+    else if (results.conditions && results.conditions.length > 0) {
+        // 如果沒有就診記錄，顯示診斷記錄
+        results.conditions.slice(0, 50).forEach(condition => {
+            const row = tbody.insertRow();
+            
+            const diagnosisCode = condition.code?.coding?.[0]?.code || '--';
+            const diagnosisDesc = condition.code?.coding?.[0]?.display || condition.code?.text || '--';
+            const recordedDate = condition.recordedDate?.split('T')[0] || condition.onsetDateTime?.split('T')[0] || '--';
+            
+            row.innerHTML = `
+                <td><strong>${getDiseaseDisplayName(diseaseType)}</strong></td>
+                <td>${recordedDate}</td>
+                <td><span class="badge badge-other">診斷記錄</span></td>
+                <td><code>${diagnosisCode}</code></td>
+                <td>${diagnosisDesc}</td>
+                <td>--</td>
+                <td><span class="badge ${getStatusBadgeClass(condition.clinicalStatus?.coding?.[0]?.code)}">${condition.clinicalStatus?.coding?.[0]?.code || 'active'}</span></td>
+            `;
+        });
+        
+        console.log(`✓ 已顯示 ${Math.min(50, results.conditions.length)} 筆診斷記錄`);
+    }
+    else {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center" style="padding: 2rem; color: #64748b;">
+                    <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                    <br>
+                    此 FHIR 伺服器目前沒有相關病例資料
+                    <br>
+                    <small>您可以嘗試使用其他 FHIR 伺服器或查詢不同疾病類型</small>
+                </td>
+            </tr>
+        `;
+        console.log('⚠ 沒有可顯示的資料');
+    }
+}
+
+// 工具函數
+function getDiseaseDisplayName(type) {
+    const names = {
+        covid19: 'COVID-19',
+        influenza: '流感',
+        conjunctivitis: '急性結膜炎',
+        enterovirus: '腸病毒',
+        diarrhea: '腹瀉'
+    };
+    return names[type] || type;
+}
+
+function getEncounterTypeDisplay(type) {
+    const types = {
+        emergency: '急診',
+        inpatient: '住院',
+        outpatient: '門診',
+        other: '其他'
+    };
+    return types[type] || type;
+}
+
+function getStatusBadgeClass(status) {
+    if (status === 'finished' || status === 'completed') return 'badge-success';
+    if (status === 'in-progress') return 'badge-warning';
+    return 'badge-secondary';
+}
+
+// 查看 CQL 程式碼
+function viewCQL(diseaseType) {
+    const cqlCode = cqlEngine.getCQLSource(diseaseType);
+    
+    if (!cqlCode) {
+        showNotification('無法載入 CQL 程式碼', 'error');
+        return;
+    }
+    
+    document.getElementById('cqlCode').textContent = cqlCode;
+    document.getElementById('cqlModal').classList.add('show');
+}
+
+// 關閉模態框
+function closeCQLModal() {
+    document.getElementById('cqlModal').classList.remove('show');
+}
+
+// 複製 CQL 程式碼
+function copyCQL() {
+    const cqlCode = document.getElementById('cqlCode').textContent;
+    navigator.clipboard.writeText(cqlCode).then(() => {
+        showNotification('CQL 程式碼已複製', 'success');
+    }).catch(() => {
+        showNotification('複製失敗', 'error');
+    });
+}
+
+// 重新整理所有資料
+async function refreshAllData() {
+    showNotification('開始重新載入所有數據...', 'info');
+    
+    const diseaseTypes = ['covid19', 'influenza', 'conjunctivitis', 'enterovirus', 'diarrhea'];
+    
+    for (const type of diseaseTypes) {
+        if (currentResults[type]) {
+            await executeCQL(type);
+            // 延遲以避免過度請求
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+    
+    showNotification('所有數據已更新', 'success');
+}
+
+// 匯出所有資料
+function exportAllData() {
+    if (Object.keys(currentResults).length === 0) {
+        showNotification('沒有可匯出的資料', 'warning');
+        return;
+    }
+    
+    const exportData = {
+        exportDate: new Date().toISOString(),
+        fhirServer: fhirConnection.getServerUrl(),
+        results: currentResults
+    };
+    
+    exportToJSON(exportData, `疾管儀表板_${new Date().toISOString().split('T')[0]}.json`);
+    showNotification('資料已匯出', 'success');
+}
+
+// 匯出資料表
+function exportTableData() {
+    const table = document.getElementById('resultsTable');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    if (rows.length === 0 || rows[0].cells.length === 1) {
+        showNotification('沒有可匯出的資料', 'warning');
+        return;
+    }
+    
+    const data = [];
+    rows.forEach(row => {
+        const cells = row.cells;
+        data.push({
+            疾病類型: cells[0].textContent,
+            就診日期: cells[1].textContent,
+            就診類型: cells[2].textContent,
+            診斷碼: cells[3].textContent,
+            診斷描述: cells[4].textContent,
+            檢驗結果: cells[5].textContent,
+            狀態: cells[6].textContent
+        });
+    });
+    
+    exportToCSV(data, `病例資料_${new Date().toISOString().split('T')[0]}.csv`);
+    showNotification('資料表已匯出', 'success');
+}
+
+// 搜尋功能
+document.getElementById('searchTable')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#resultsTableBody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// ========== 詳細數據模態框 ==========
+let currentDetailDisease = null;
+
+function showDetailModal(diseaseType) {
+    console.log(`顯示 ${diseaseType} 的詳細數據`);
+    currentDetailDisease = diseaseType;
+    
+    const modal = document.getElementById('detailModal');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    const diseaseNames = {
+        'covid19': 'COVID-19',
+        'influenza': '流感',
+        'conjunctivitis': '急性結膜炎',
+        'enterovirus': '腸病毒',
+        'diarrhea': '腹瀉群聚'
+    };
+    
+    const diseaseIcons = {
+        'covid19': 'fa-virus',
+        'influenza': 'fa-disease',
+        'conjunctivitis': 'fa-eye',
+        'enterovirus': 'fa-hand-dots',
+        'diarrhea': 'fa-bacteria'
+    };
+    
+    modalTitle.innerHTML = `<i class="fas ${diseaseIcons[diseaseType]}"></i> ${diseaseNames[diseaseType]} 詳細數據`;
+    
+    // 從 currentResults 取得資料
+    const results = currentResults[diseaseType];
+    
+    if (results) {
+        updateDetailModalData(results);
+        
+        // 同步更新外部卡片的總患者數（確保與詳細報告一致）
+        // 從encounters計算唯一患者數
+        const uniquePatients = new Set();
+        if (results.encounters && results.encounters.length > 0) {
+            results.encounters.forEach(encounter => {
+                const patientRef = encounter.subject?.reference;
+                if (patientRef) {
+                    const patientId = patientRef.split('/').pop();
+                    uniquePatients.add(patientId);
+                }
+            });
+        }
+        const totalPatients = uniquePatients.size;
+        console.log(`🔄 同步更新外部卡片: ${diseaseType} = ${totalPatients} 人（從encounters計算）`);
+        updateCardTotal(diseaseType, totalPatients);
+    } else {
+        // 如果沒有資料，顯示預設值
+        document.getElementById('detailTotal').textContent = '--';
+        document.getElementById('detailNew').textContent = '--';
+        document.getElementById('detailEncounters').textContent = '--';
+        document.getElementById('detailConditions').textContent = '--';
+        document.getElementById('detailPatients').textContent = '--';
+        document.getElementById('detailObservations').textContent = '--';
+    }
+    
+    modal.classList.add('show');
+}
+
+function updateDetailModalData(results) {
+    console.log('更新模態框資料:', results);
+    
+    // 計算唯一患者數（從encounters提取，與外部卡片邏輯一致）
+    const uniquePatients = new Set();
+    if (results.encounters && results.encounters.length > 0) {
+        results.encounters.forEach(encounter => {
+            const patientRef = encounter.subject?.reference;
+            if (patientRef) {
+                const patientId = patientRef.split('/').pop();
+                uniquePatients.add(patientId);
+            }
+        });
+    }
+    
+    const patientsCount = uniquePatients.size;
+    const encountersCount = results.encounters?.length || 0;
+    
+    console.log(`📊 模態框顯示: ${patientsCount} 位患者（從encounters計算），${encountersCount} 筆就診`);
+    
+    // 顯示年度資料分布（改為: 2019以前、2020-2025各年）
+    updateYearPatientDistribution(results);
+    
+    // 計算年齡分布（按實際年份分組）
+    updateAgeDistribution(results);
+    
+    // 更新日期範圍（圖三：資料庫最早+最晚日期）
+    updateDateRange(results);
+}
+
+// 新增：更新年度患者分布（2019以前、2020-2025）
+function updateYearPatientDistribution(results) {
+    const container = document.getElementById('yearPatientDistributionChart');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!results.patients || results.patients.length === 0 || !results.encounters || results.encounters.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 2rem;">無患者資料</div>';
+        return;
+    }
+    
+    // 統計每個患者的就診年份
+    const patientYearMap = new Map();
+    results.encounters.forEach(encounter => {
+        const patientRef = encounter.subject?.reference;
+        if (!patientRef) return;
+        
+        const patientId = patientRef.split('/').pop();
+        const encDate = encounter.period?.start || encounter.period?.end;
+        if (!encDate) return;
+        
+        const year = new Date(encDate).getFullYear();
+        if (!patientYearMap.has(patientId)) {
+            patientYearMap.set(patientId, new Set());
+        }
+        patientYearMap.get(patientId).add(year);
+    });
+    
+    // 分組統計：2019以前、2020-2025各年
+    const yearGroups = {
+        'before2019': 0,
+        '2020': 0,
+        '2021': 0,
+        '2022': 0,
+        '2023': 0,
+        '2024': 0,
+        '2025': 0
+    };
+    
+    patientYearMap.forEach((years, patientId) => {
+        const yearArray = Array.from(years);
+        const hasYear2020 = yearArray.includes(2020);
+        const hasYear2021 = yearArray.includes(2021);
+        const hasYear2022 = yearArray.includes(2022);
+        const hasYear2023 = yearArray.includes(2023);
+        const hasYear2024 = yearArray.includes(2024);
+        const hasYear2025 = yearArray.includes(2025);
+        const hasBefore2019 = yearArray.some(y => y < 2020);
+        
+        if (hasBefore2019) yearGroups['before2019']++;
+        if (hasYear2020) yearGroups['2020']++;
+        if (hasYear2021) yearGroups['2021']++;
+        if (hasYear2022) yearGroups['2022']++;
+        if (hasYear2023) yearGroups['2023']++;
+        if (hasYear2024) yearGroups['2024']++;
+        if (hasYear2025) yearGroups['2025']++;
+    });
+    
+    const maxCount = Math.max(...Object.values(yearGroups));
+    
+    console.log('📊 年度患者分布:', yearGroups);
+    
+    // 顯示分組（按指定順序）
+    const displayOrder = ['before2019', '2020', '2021', '2022', '2023', '2024', '2025'];
+    const labels = {
+        'before2019': '2019以前',
+        '2020': '2020年',
+        '2021': '2021年',
+        '2022': '2022年',
+        '2023': '2023年',
+        '2024': '2024年',
+        '2025': '2025年'
+    };
+    
+    displayOrder.forEach(key => {
+        const count = yearGroups[key] || 0;
+        const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        
+        const barItem = document.createElement('div');
+        barItem.className = 'year-bar-item';
+        barItem.innerHTML = `
+            <span class="year-bar-label">${labels[key]}</span>
+            <div class="year-bar-track">
+                <div class="year-bar-fill" style="width: ${percentage}%"></div>
+            </div>
+            <span class="year-bar-count">${count} 人</span>
+        `;
+        container.appendChild(barItem);
+    });
+}
+
+// 新增：更新日期範圍（資料庫最早到最晚的日期）
+function updateDateRange(results) {
+    if (!results.encounters || results.encounters.length === 0) {
+        return;
+    }
+    
+    let earliestDate = null;
+    let latestDate = null;
+    
+    results.encounters.forEach(encounter => {
+        const encDate = encounter.period?.start || encounter.period?.end;
+        if (encDate) {
+            const date = new Date(encDate);
+            if (!earliestDate || date < earliestDate) {
+                earliestDate = date;
+            }
+            if (!latestDate || date > latestDate) {
+                latestDate = date;
+            }
+        }
+    });
+    
+    // 使用固定範圍：1900 到今天
+    const startDate = new Date(1900, 0, 1);
+    const endDate = new Date();
+    
+    const formatDate = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}/${m}/${d}`;
+    };
+    
+    const dateRangeText = `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
+    
+    // 更新所有卡片的日期範圍
+    const cardIds = ['covid', 'flu', 'conjunctivitis', 'entero', 'diarrhea'];
+    cardIds.forEach(cardId => {
+        const dateRangeElement = document.getElementById(`${cardId}DateRange`);
+        if (dateRangeElement) {
+            dateRangeElement.textContent = dateRangeText;
+        }
+    });
+    
+    console.log(`📅 資料日期範圍（固定）: ${dateRangeText}`);
+}
+
+function updateAgeDistribution(results) {
+    if (!results.patients || results.patients.length === 0 || !results.encounters || results.encounters.length === 0) {
+        console.log('⚠️ 沒有患者或就診資料，無法計算年齡分布');
+        return;
+    }
+    
+    // 使用實際年份（從儲存的結果中取得）
+    const year1 = results.actualYear1 || 2024;
+    const year2 = results.actualYear2 || 2025;
+    
+    console.log(`📊 計算年齡分布：使用 ${year1}年 和 ${year2}年`);
+    
+    // 更新模態框中的年份標籤
+    const year1Title = document.querySelector('#ageChart2024')?.parentElement?.querySelector('.year-chart-title');
+    const year2Title = document.querySelector('#ageChart2025')?.parentElement?.querySelector('.year-chart-title');
+    if (year1Title) year1Title.textContent = `${year1}年`;
+    if (year2Title) year2Title.textContent = `${year2}年`;
+    
+    // 建立患者ID與遭遇年份的對應
+    const patientYearMap = new Map();
+    results.encounters.forEach(encounter => {
+        const patientRef = encounter.subject?.reference;
+        if (!patientRef) return;
+        
+        const patientId = patientRef.split('/').pop();
+        const encDate = encounter.period?.start || encounter.period?.end;
+        if (!encDate) return;
+        
+        const year = new Date(encDate).getFullYear();
+        if (year === year1 || year === year2) {
+            if (!patientYearMap.has(patientId)) {
+                patientYearMap.set(patientId, new Set());
+            }
+            patientYearMap.get(patientId).add(year);
+        }
+    });
+    
+    // 計算年齡並分組
+    const ageGroupsYear1 = {};
+    const ageGroupsYear2 = {};
+    
+    results.patients.forEach(patient => {
+        const patientId = patient.id;
+        const years = patientYearMap.get(patientId);
+        if (!years) return;
+        
+        const birthDate = patient.birthDate;
+        if (!birthDate) return;
+        
+        // 計算當前年齡
+        const age = new Date().getFullYear() - new Date(birthDate).getFullYear();
+        const ageGroup = Math.floor(age / 5) * 5; // 0-4, 5-9, 10-14...
+        
+        if (years.has(year1)) {
+            ageGroupsYear1[ageGroup] = (ageGroupsYear1[ageGroup] || 0) + 1;
+        }
+        if (years.has(year2)) {
+            ageGroupsYear2[ageGroup] = (ageGroupsYear2[ageGroup] || 0) + 1;
+        }
+    });
+    
+    console.log(`📊 ${year1}年齡分布:`, ageGroupsYear1);
+    console.log(`📊 ${year2}年齡分布:`, ageGroupsYear2);
+    
+    // 生成圖表
+    renderAgeChart('ageChart2024', ageGroupsYear1);
+    renderAgeChart('ageChart2025', ageGroupsYear2);
+}
+
+function renderAgeChart(containerId, ageGroups) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (Object.keys(ageGroups).length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 2rem;">無資料</div>';
+        return;
+    }
+    
+    // 排序年齡組
+    const sortedGroups = Object.entries(ageGroups).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+    const maxCount = Math.max(...sortedGroups.map(([_, count]) => count));
+    
+    sortedGroups.forEach(([ageGroup, count]) => {
+        const ageEnd = parseInt(ageGroup) + 4;
+        const percentage = (count / maxCount) * 100;
+        
+        const barItem = document.createElement('div');
+        barItem.className = 'age-bar-item';
+        barItem.innerHTML = `
+            <span class="age-label">${ageGroup}-${ageEnd}歲</span>
+            <div class="age-bar-track">
+                <div class="age-bar-fill" style="width: ${percentage}%"></div>
+            </div>
+            <span class="age-count">${count}</span>
+        `;
+        container.appendChild(barItem);
+    });
+}
+
+function closeDetailModal() {
+    const modal = document.getElementById('detailModal');
+    modal.classList.remove('show');
+    currentDetailDisease = null;
+}
+
+function executeCQLFromModal() {
+    if (currentDetailDisease) {
+        closeDetailModal();
+        executeCQL(currentDetailDisease);
+    }
+}
+
+function exportDetailData() {
+    if (!currentDetailDisease || !currentResults[currentDetailDisease]) {
+        showNotification('沒有可匯出的資料', 'warning');
+        return;
+    }
+    
+    const results = currentResults[currentDetailDisease];
+    const diseaseNames = {
+        'covid19': 'COVID-19',
+        'influenza': '流感',
+        'conjunctivitis': '急性結膜炎',
+        'enterovirus': '腸病毒',
+        'diarrhea': '腹瀉群聚'
+    };
+    
+    const exportData = {
+        疾病類型: diseaseNames[currentDetailDisease],
+        查詢時間: new Date().toISOString(),
+        總病例數: results.totalCases,
+        本日新增: results.newCasesToday,
+        就診記錄: results.encounters?.length || 0,
+        診斷記錄: results.conditions?.length || 0,
+        患者數: results.patients?.length || 0,
+        檢驗記錄: results.observations?.length || 0
+    };
+    
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${diseaseNames[currentDetailDisease]}_詳細資料_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    
+    showNotification('詳細資料已匯出', 'success');
+}
+
+// 點擊模態框外部關閉
+document.getElementById('detailModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDetailModal();
+    }
+});
+
+// 全域變數儲存當前詳細報告的疾病類型
+let currentDetailDisease = null;
+
+// 將 showDetailReport 定義為全域函數
+window.showDetailReport = function(diseaseType) {
+    console.log('========== showDetailReport 被調用 ==========');
+    console.log('疾病類型:', diseaseType);
+    console.log('currentResults:', currentResults);
+    console.log('該疾病結果:', currentResults[diseaseType]);
+    
+    // 測試:先顯示一個簡單的 alert
+    alert('showDetailReport 函數被調用了! 疾病: ' + diseaseType);
+    
+    // 檢查是否有查詢結果
+    if (!currentResults[diseaseType]) {
+        console.log('沒有查詢結果');
+        showNotification('請先點擊"執行查詢"按鈕', 'warning');
+        return;
+    }
+    
+    console.log('有查詢結果,繼續處理...');
+    const results = currentResults[diseaseType];
+    const diseaseNames = {
+        'covid19': 'COVID-19',
+        'influenza': '流感',
+        'conjunctivitis': '急性結膜炎',
+        'enterovirus': '腸病毒',
+        'diarrhea': '急性腹瀉'
+    };
+    
+    // 計算唯一患者數
+    let uniquePatients = new Set();
+    if (results.conditions && results.conditions.length > 0) {
+        results.conditions.forEach(condition => {
+            const patientRef = condition.subject?.reference;
+            if (patientRef) {
+                uniquePatients.add(patientRef.split('/').pop());
+            }
+        });
+    } else if (results.encounters && results.encounters.length > 0) {
+        results.encounters.forEach(encounter => {
+            const patientRef = encounter.subject?.reference;
+            if (patientRef) {
+                uniquePatients.add(patientRef.split('/').pop());
+            }
+        });
+    }
+    
+    // 計算就診類型統計
+    let emergencyCount = 0, inpatientCount = 0, outpatientCount = 0;
+    if (results.encounters) {
+        results.encounters.forEach(enc => {
+            const classCode = enc.class?.code || enc.class?.display || '';
+            if (classCode.toLowerCase().includes('emerg')) emergencyCount++;
+            else if (classCode.toLowerCase().includes('inp')) inpatientCount++;
+            else if (classCode.toLowerCase().includes('out') || classCode.toLowerCase().includes('amb')) outpatientCount++;
+        });
+    }
+    
+    // 構建詳細報告HTML
+    const reportHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 16px; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem;">
+                <h2 style="margin: 0; color: #1e293b; font-size: 1.5rem;">
+                    <i class="fas fa-file-medical"></i> ${diseaseNames[diseaseType]} 詳細報告
+                </h2>
+                <button onclick="closeDetailReport()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.5rem;">總患者數</div>
+                    <div style="font-size: 2rem; font-weight: 700;">${uniquePatients.size}</div>
+                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">唯一患者</div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.5rem;">就診記錄</div>
+                    <div style="font-size: 2rem; font-weight: 700;">${results.encounters?.length || 0}</div>
+                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">總次數</div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.5rem;">診斷記錄</div>
+                    <div style="font-size: 2rem; font-weight: 700;">${results.conditions?.length || 0}</div>
+                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">總筆數</div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.5rem;">檢驗記錄</div>
+                    <div style="font-size: 2rem; font-weight: 700;">${results.observations?.length || 0}</div>
+                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">總筆數</div>
+                </div>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                <h3 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1.1rem;">
+                    <i class="fas fa-hospital"></i> 就診類型分布
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                    <div>
+                        <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 0.5rem;">急診</div>
+                        <div style="color: #ef4444; font-size: 1.5rem; font-weight: 700;">${emergencyCount}</div>
+                    </div>
+                    <div>
+                        <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 0.5rem;">住院</div>
+                        <div style="color: #8b5cf6; font-size: 1.5rem; font-weight: 700;">${inpatientCount}</div>
+                    </div>
+                    <div>
+                        <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 0.5rem;">門診</div>
+                        <div style="color: #3b82f6; font-size: 1.5rem; font-weight: 700;">${outpatientCount}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                <h3 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1.1rem;">
+                    <i class="fas fa-info-circle"></i> 查詢資訊
+                </h3>
+                <div style="color: #64748b; font-size: 0.9rem; line-height: 1.8;">
+                    <div><strong>FHIR 伺服器:</strong> ${window.fhirServer || 'https://hapi.fhir.org/baseR4'}</div>
+                    <div><strong>查詢時間:</strong> ${new Date().toLocaleString('zh-TW')}</div>
+                    <div><strong>資料範圍:</strong> 所有可用資料</div>
+                    <div><strong>查詢上限:</strong> 1000筆</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button onclick="closeDetailReport()" style="padding: 0.75rem 1.5rem; background: #64748b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-times"></i> 關閉
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // 創建或顯示模態窗口
+    let modal = document.getElementById('detailReportModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'detailReportModal';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 2rem;';
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = reportHTML;
+    modal.style.display = 'flex';
+    
+    // 保存當前疾病類型以供匯出使用
+    currentDetailDisease = diseaseType;
+};
+
+// 關閉詳細報告也設為全域函數
+window.closeDetailReport = function() {
+    const modal = document.getElementById('detailReportModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};

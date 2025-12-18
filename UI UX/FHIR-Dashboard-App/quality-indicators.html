@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>醫療品質指標儀表板 - FHIR CQL Platform</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/llm-connection.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- 導航欄 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>FHIR CQL Platform</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html">首頁</a></li>
+                <li><a href="disease-control.html">傳染病管制</a></li>
+                <li><a href="public-health.html">國民健康</a></li>
+                <li><a href="esg-indicators.html">ESG指標</a></li>
+                <li><a href="quality-indicators.html" class="active">醫療品質</a></li>
+            </ul>
+            <div class="nav-settings" onclick="openLLMSettingsModal()" style="cursor: pointer;" title="LLM設定">
+                <i class="fas fa-cog"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容區 -->
+    <main class="main-content">
+        <!-- 頁面標題 -->
+        <section class="page-header">
+            <div class="header-content">
+                <h1><i class="fas fa-award"></i> 醫療品質指標儀表板</h1>
+                <p>醫院總額醫療品質資訊公開系統 - 39項核心指標</p>
+            </div>
+            <div class="header-actions" style="position: relative;">
+                <div style="display: flex; flex-direction: column; align-items: center; margin-right: 10px;">
+                    <button class="btn btn-secondary" onclick="toggleDemoMode()" id="demoModeBtn">
+                        <i class="fas fa-flask"></i> <span id="demoModeText">啟用示範模式</span>
+                    </button>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 4px; text-align: center; line-height: 1.3;">
+                        <span style="color: #10b981; font-weight: 600;">●</span> 綠色：模擬資料<br>
+                        <span style="color: #94a3b8; font-weight: 600;">●</span> 灰色：FHIR資料
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="generateExcel()" style="margin-right: 10px; background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-file-excel"></i> 生成EXCEL
+                </button>
+                <button class="btn btn-warning" onclick="uploadToNHI()" style="margin-right: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-upload"></i> 上傳健保局
+                </button>
+                <button class="btn btn-primary" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> 重新整理
+                </button>
+            </div>
+        </section>
+
+        <!-- FHIR 連線狀態 -->
+        <section class="connection-banner" id="connectionBanner">
+            <div class="banner-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>請先在首頁設定 FHIR 伺服器連線</span>
+                <a href="index.html" class="btn btn-sm">前往設定</a>
+            </div>
+        </section>
+
+        <!-- FHIR 無數據提示 -->
+        <section class="connection-banner" id="noDataBanner" style="display: none; background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+            <div class="banner-content">
+                <i class="fas fa-database"></i>
+                <span>當前FHIR服務器沒有測試數據</span>
+                <button class="btn btn-sm" onclick="switchToTestServer()" style="background: white; color: #f59e0b;">
+                    <i class="fas fa-sync-alt"></i> 切換到測試服務器
+                </button>
+            </div>
+        </section>
+
+        <!-- 指標分類標籤 -->
+        <section class="filter-section">
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterCategory('all')">全部 (39)</button>
+                <button class="filter-tab" onclick="filterCategory('medication')">用藥安全 (16)</button>
+                <button class="filter-tab" onclick="filterCategory('outpatient')">門診品質 (4)</button>
+                <button class="filter-tab" onclick="filterCategory('inpatient')">住院品質 (5)</button>
+                <button class="filter-tab" onclick="filterCategory('surgery')">手術品質 (10)</button>
+                <button class="filter-tab" onclick="filterCategory('outcome')">結果品質 (4)</button>
+            </div>
+        </section>
+
+        <!-- 系統公告 -->
+        <section class="info-banner" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px; padding: 16px 24px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div class="banner-content" style="display: flex; align-items: center; gap: 16px; color: white;">
+                <i class="fas fa-info-circle" style="font-size: 24px; opacity: 0.9;"></i>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">
+                        <i class="fas fa-code-branch"></i> 系統開發說明
+                    </div>
+                    <div style="font-size: 14px; opacity: 0.95; line-height: 1.6;">
+                        本系統已完整實作衛福部公告之39項醫療品質指標CQL規範，待政府正式公告 <strong>FHIR Implementation Guide</strong> 及 <strong>TWCore Profile</strong> 後，僅需微調CodeSystem URL及Extension定義即可完成對接，預計1-2個工作天內可正式上線計算。
+                    </div>
+                </div>
+                <button class="btn" onclick="this.parentElement.parentElement.style.display='none'" 
+                        style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; cursor: pointer; border-radius: 6px; font-size: 13px; transition: all 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <i class="fas fa-times"></i> 關閉
+                </button>
+            </div>
+        </section>
+
+        <!-- 用藥安全指標 -->
+        <section class="overview-section" data-category="medication">
+            <div class="section-header">
+                <div>
+                    <h2><i class="fas fa-capsules"></i> 用藥安全指標</h2>
+                    <p>門診用藥合理性與藥品重複使用監測</p>
+                </div>
+                <button class="btn btn-primary" onclick="executeAllMedication()" style="margin-left: auto;">
+                    <i class="fas fa-play-circle"></i> 全部啟動
+                </button>
+            </div>
+            
+            <div class="overview-grid quality-grid">
+                <!-- 指標1: 門診注射劑使用率 -->
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-01')">
+                    <div class="card-badge">01</div>
+                    <div class="card-content">
+                        <h3>門診注射劑使用率</h3>
+                        <p class="card-code">3127</p>
+                        <p class="card-cql-file">Outpatient_Injection_Usage_Rate</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">使用率</span>
+                                <span class="mini-value" id="ind01Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-01')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標2: 門診抗生素使用率 -->
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-02')">
+                    <div class="card-badge">02</div>
+                    <div class="card-content">
+                        <h3>門診抗生素使用率</h3>
+                        <p class="card-code">1140.01</p>
+                        <p class="card-cql-file">Outpatient_Antibiotic_Usage_Rate</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">使用率</span>
+                                <span class="mini-value" id="ind02Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-02')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標3-1: 同院降血壓藥重疊率 -->
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-1')">
+                    <div class="card-badge">03-1</div>
+                    <div class="card-content">
+                        <h3>同院降血壓藥重疊</h3>
+                        <p class="card-code">1710</p>
+                        <p class="card-cql-file">Same_Hospital_Antihypertensive_Overlap</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_1Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-1')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標3-2: 同院降血脂藥重疊率 -->
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-2')">
+                    <div class="card-badge">03-2</div>
+                    <div class="card-content">
+                        <h3>同院降血脂藥重疊</h3>
+                        <p class="card-code">1711</p>
+                        <p class="card-cql-file">Same_Hospital_Lipid_Lowering_Overlap</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_2Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-2')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標3-3: 同院降血糖藥重疊率 -->
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-3')">
+                    <div class="card-badge">03-3</div>
+                    <div class="card-content">
+                        <h3>同院降血糖藥重疊</h3>
+                        <p class="card-code">1712</p>
+                        <p class="card-cql-file">Same_Hospital_Antidiabetic_Overlap</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_3Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-3')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標3-4 到 3-16: 其他藥物重疊率 -->
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-4')">
+                    <div class="card-badge">03-4</div>
+                    <div class="card-content">
+                        <h3>同院抗思覺失調藥重疊</h3>
+                        <p class="card-code">1726</p>
+                        <p class="card-cql-file">Same_Hospital_Antipsychotic_Overlap</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_4Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-4')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-5')">
+                    <div class="card-badge">03-5</div>
+                    <div class="card-content">
+                        <h3>同院抗憂鬱藥重疊</h3>
+                        <p class="card-code">1727</p>
+                        <p class="card-cql-file">Same_Hospital_Antidepressant_Overlap</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_5Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-5')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-6')">
+                    <div class="card-badge">03-6</div>
+                    <div class="card-content">
+                        <h3>同院安眠鎮靜藥重疊</h3>
+                        <p class="card-code">1728</p>
+                        <p class="card-cql-file">Same_Hospital_Sedative_Overlap</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_6Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-6')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-7')">
+                    <div class="card-badge">03-7</div>
+                    <div class="card-content">
+                        <h3>同院抗血栓藥重疊</h3>
+                        <p class="card-code">3375</p>
+                        <p class="card-cql-file">Indicator_03_7_Same_Hospital_Antithrombotic_Overlap_3375.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_7Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-7')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-8')">
+                    <div class="card-badge">03-8</div>
+                    <div class="card-content">
+                        <h3>同院前列腺藥重疊</h3>
+                        <p class="card-code">3376</p>
+                        <p class="card-cql-file">Indicator_03_8_Same_Hospital_Prostate_Overlap_3376.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_8Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-8')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 跨院指標 3-9 到 3-16 -->
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-9')">
+                    <div class="card-badge">03-9</div>
+                    <div class="card-content">
+                        <h3>跨院降血壓藥重疊</h3>
+                        <p class="card-code">1713</p>
+                        <p class="card-cql-file">Indicator_03_9_Cross_Hospital_Antihypertensive_Overlap_1713.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_9Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-9')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-10')">
+                    <div class="card-badge">03-10</div>
+                    <div class="card-content">
+                        <h3>跨院降血脂藥重疊</h3>
+                        <p class="card-code">1714</p>
+                        <p class="card-cql-file">Indicator_03_10_Cross_Hospital_Lipid_Lowering_Overlap_1714.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_10Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-10')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-11')">
+                    <div class="card-badge">03-11</div>
+                    <div class="card-content">
+                        <h3>跨院降血糖藥重疊</h3>
+                        <p class="card-code">1715</p>
+                        <p class="card-cql-file">Indicator_03_11_Cross_Hospital_Antidiabetic_Overlap_1715.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_11Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-11')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-12')">
+                    <div class="card-badge">03-12</div>
+                    <div class="card-content">
+                        <h3>跨院抗思覺失調藥重疊</h3>
+                        <p class="card-code">1729</p>
+                        <p class="card-cql-file">Indicator_03_12_Cross_Hospital_Antipsychotic_Overlap_1729.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_12Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-12')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-13')">
+                    <div class="card-badge">03-13</div>
+                    <div class="card-content">
+                        <h3>跨院抗憂鬱藥重疊</h3>
+                        <p class="card-code">1730</p>
+                        <p class="card-cql-file">Indicator_03_13_Cross_Hospital_Antidepressant_Overlap_1730.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_13Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-13')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-14')">
+                    <div class="card-badge">03-14</div>
+                    <div class="card-content">
+                        <h3>跨院安眠鎮靜藥重疊</h3>
+                        <p class="card-code">1731</p>
+                        <p class="card-cql-file">Indicator_03_14_Cross_Hospital_Sedative_Overlap_1731.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_14Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-14')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-15')">
+                    <div class="card-badge">03-15</div>
+                    <div class="card-content">
+                        <h3>跨院抗血栓藥重疊</h3>
+                        <p class="card-code">3377</p>
+                        <p class="card-cql-file">Indicator_03_15_Cross_Hospital_Antithrombotic_Overlap_3377.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_15Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-15')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-med" onclick="showDetailModal('indicator-03-16')">
+                    <div class="card-badge">03-16</div>
+                    <div class="card-content">
+                        <h3>跨院前列腺藥重疊</h3>
+                        <p class="card-code">3378</p>
+                        <p class="card-cql-file">Indicator_03_16_Cross_Hospital_Prostate_Overlap_3378.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">重疊率</span>
+                                <span class="mini-value" id="ind03_16Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-03-16')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 門診品質指標 -->
+        <section class="overview-section" data-category="outpatient">
+            <div class="section-header">
+                <div>
+                    <h2><i class="fas fa-hospital-user"></i> 門診品質指標</h2>
+                    <p>門診照護品質與處方合理性</p>
+                </div>
+                <button class="btn btn-primary" onclick="executeAllOutpatient()" style="margin-left: auto;">
+                    <i class="fas fa-play-circle"></i> 全部啟動
+                </button>
+            </div>
+            
+            <div class="overview-grid quality-grid">
+                <!-- 指標4: 慢性病連續處方箋使用率 -->
+                <div class="overview-card quality-out" onclick="showDetailModal('indicator-04')">
+                    <div class="card-badge">04</div>
+                    <div class="card-content">
+                        <h3>慢性病連處籤使用率</h3>
+                        <p class="card-code">1318</p>
+                        <p class="card-cql-file">Indicator_04_Chronic_Continuous_Prescription_Rate_1318.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">使用率</span>
+                                <span class="mini-value" id="ind04Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-04')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標5: 處方10種以上藥品比率 -->
+                <div class="overview-card quality-out" onclick="showDetailModal('indicator-05')">
+                    <div class="card-badge">05</div>
+                    <div class="card-content">
+                        <h3>處方10種以上藥品率</h3>
+                        <p class="card-code">3128</p>
+                        <p class="card-cql-file">Indicator_05_Prescription_10_Plus_Drugs_Rate_3128.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">比率</span>
+                                <span class="mini-value" id="ind05Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-05')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標6: 小兒氣喘急診率 -->
+                <div class="overview-card quality-out" onclick="showDetailModal('indicator-06')">
+                    <div class="card-badge">06</div>
+                    <div class="card-content">
+                        <h3>小兒氣喘急診率</h3>
+                        <p class="card-code">1315Q/1317Y</p>
+                        <p class="card-cql-file">Indicator_06_Pediatric_Asthma_ED_Rate_1315Q_1317Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">急診率</span>
+                                <span class="mini-value" id="ind06Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-06')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標7: 糖尿病HbA1c檢驗率 -->
+                <div class="overview-card quality-out" onclick="showDetailModal('indicator-07')">
+                    <div class="card-badge">07</div>
+                    <div class="card-content">
+                        <h3>糖尿病HbA1c檢驗率</h3>
+                        <p class="card-code">109.01Q/110.01Y</p>
+                        <p class="card-cql-file">Indicator_07_Diabetes_HbA1c_Testing_Rate_109_01Q_110_01Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">檢驗率</span>
+                                <span class="mini-value" id="ind07Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-07')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標8: 同日同院同疾病再就診率 -->
+                <div class="overview-card quality-out" onclick="showDetailModal('indicator-08')">
+                    <div class="card-badge">08</div>
+                    <div class="card-content">
+                        <h3>同日同院同疾病再就診率</h3>
+                        <p class="card-code">1322</p>
+                        <p class="card-cql-file">Indicator_08_Same_Day_Same_Disease_Revisit_Rate_1322.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">再就診率</span>
+                                <span class="mini-value" id="ind08Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-08')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 住院品質指標 -->
+        <section class="overview-section" data-category="inpatient">
+            <div class="section-header">
+                <div>
+                    <h2><i class="fas fa-bed"></i> 住院品質指標</h2>
+                    <p>住院照護品質與再入院率</p>
+                </div>
+                <button class="btn btn-primary" onclick="executeAllInpatient()" style="margin-left: auto;">
+                    <i class="fas fa-play-circle"></i> 全部啟動
+                </button>
+            </div>
+            
+            <div class="overview-grid quality-grid">
+                <!-- 指標9: 非計畫性14天內再入院率 -->
+                <div class="overview-card quality-inp" onclick="showDetailModal('indicator-09')">
+                    <div class="card-badge">09</div>
+                    <div class="card-content">
+                        <h3>14天內非計畫再入院率</h3>
+                        <p class="card-code">1077.01Q/1809Y</p>
+                        <p class="card-cql-file">Indicator_09_Unplanned_14Day_Readmission_Rate_1077_01Q_1809Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">再入院率</span>
+                                <span class="mini-value" id="ind09Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-09')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標10: 出院後3天內急診率 -->
+                <div class="overview-card quality-inp" onclick="showDetailModal('indicator-10')">
+                    <div class="card-badge">10</div>
+                    <div class="card-content">
+                        <h3>出院後3天內急診率</h3>
+                        <p class="card-code">108.01</p>
+                        <p class="card-cql-file">Indicator_10_Inpatient_3Day_ED_After_Discharge_108_01.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">急診率</span>
+                                <span class="mini-value" id="ind10Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-10')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標11-1到11-4: 剖腹產率 -->
+                <div class="overview-card quality-inp" onclick="showDetailModal('indicator-11-1')">
+                    <div class="card-badge">11-1</div>
+                    <div class="card-content">
+                        <h3>整體剖腹產率</h3>
+                        <p class="card-code">1136.01</p>
+                        <p class="card-cql-file">Indicator_11_1_Overall_Cesarean_Section_Rate_1136_01.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">剖腹產率</span>
+                                <span class="mini-value" id="ind11_1Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-11-1')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-inp" onclick="showDetailModal('indicator-11-2')">
+                    <div class="card-badge">11-2</div>
+                    <div class="card-content">
+                        <h3>產婦要求剖腹產率</h3>
+                        <p class="card-code">1137.01</p>
+                        <p class="card-cql-file">Indicator_11_2_Cesarean_Section_Rate_Patient_Requested_1137_01.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">剖腹產率</span>
+                                <span class="mini-value" id="ind11_2Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-11-2')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-inp" onclick="showDetailModal('indicator-11-3')">
+                    <div class="card-badge">11-3</div>
+                    <div class="card-content">
+                        <h3>有適應症剖腹產率</h3>
+                        <p class="card-code">1138.01</p>
+                        <p class="card-cql-file">Indicator_11_3_Cesarean_Section_Rate_With_Indication_1138_01.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">剖腹產率</span>
+                                <span class="mini-value" id="ind11_3Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-11-3')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-inp" onclick="showDetailModal('indicator-11-4')">
+                    <div class="card-badge">11-4</div>
+                    <div class="card-content">
+                        <h3>初產婦剖腹產率</h3>
+                        <p class="card-code">1075.01</p>
+                        <p class="card-cql-file">Indicator_11_4_Cesarean_Section_Rate_First_Time_1075_01.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">剖腹產率</span>
+                                <span class="mini-value" id="ind11_4Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-11-4')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 手術品質指標 -->
+        <section class="overview-section" data-category="surgery">
+            <div class="section-header">
+                <div>
+                    <h2><i class="fas fa-procedures"></i> 手術品質指標</h2>
+                    <p>手術安全與術後併發症監測</p>
+                </div>
+                <button class="btn btn-primary" onclick="executeAllSurgery()" style="margin-left: auto;">
+                    <i class="fas fa-play-circle"></i> 全部啟動
+                </button>
+            </div>
+            
+            <div class="overview-grid quality-grid">
+                <!-- 指標12: 清淨手術抗生素超過3天使用率 -->
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-12')">
+                    <div class="card-badge">12</div>
+                    <div class="card-content">
+                        <h3>清淨手術抗生素超3天率</h3>
+                        <p class="card-code">1155</p>
+                        <p class="card-cql-file">Indicator_12_Clean_Surgery_Antibiotic_Over_3Days_Rate_1155.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">使用率</span>
+                                <span class="mini-value" id="ind12Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-12')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標13: ESWL平均利用次數 -->
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-13')">
+                    <div class="card-badge">13</div>
+                    <div class="card-content">
+                        <h3>體外震波碎石平均利用次數</h3>
+                        <p class="card-code">20.01Q/1804Y</p>
+                        <p class="card-cql-file">Indicator_13_Average_ESWL_Utilization_Times_20_01Q_1804Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">平均次數</span>
+                                <span class="mini-value" id="ind13Rate">--</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-13')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標14: 子宮肌瘤手術14天再入院率 -->
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-14')">
+                    <div class="card-badge">14</div>
+                    <div class="card-content">
+                        <h3>子宮肌瘤術14天再入院率</h3>
+                        <p class="card-code">473.01</p>
+                        <p class="card-cql-file">Indicator_14_Uterine_Fibroid_Surgery_14Day_Readmission_473_01.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">再入院率</span>
+                                <span class="mini-value" id="ind14Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-14')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標15-1到15-3: 人工膝關節置換感染率 -->
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-15-1')">
+                    <div class="card-badge">15-1</div>
+                    <div class="card-content">
+                        <h3>膨關節置換90天深部感染率</h3>
+                        <p class="card-code">353.01</p>
+                        <p class="card-cql-file">Indicator_15_1_Knee_Arthroplasty_90Day_Deep_Infection_353_01.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">感染率</span>
+                                <span class="mini-value" id="ind15_1Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-15-1')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-15-2')">
+                    <div class="card-badge">15-2</div>
+                    <div class="card-content">
+                        <h3>全膨置換90天深部感染率</h3>
+                        <p class="card-code">3249</p>
+                        <p class="card-cql-file">Indicator_15_2_Total_Knee_Arthroplasty_90Day_Deep_Infection_3249.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">感染率</span>
+                                <span class="mini-value" id="ind15_2Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-15-2')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-15-3')">
+                    <div class="card-badge">15-3</div>
+                    <div class="card-content">
+                        <h3>部分膨置換90天深部感染率</h3>
+                        <p class="card-code">3250</p>
+                        <p class="card-cql-file">Indicator_15_3_Partial_Knee_Arthroplasty_90Day_Deep_Infection_3250.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">感染率</span>
+                                <span class="mini-value" id="ind15_3Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-15-3')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標16: 住院手術傷口感染率 -->
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-16')">
+                    <div class="card-badge">16</div>
+                    <div class="card-content">
+                        <h3>住院手術傷口感染率</h3>
+                        <p class="card-code">1658Q/1666Y</p>
+                        <p class="card-cql-file">Indicator_16_Inpatient_Surgical_Wound_Infection_Rate_1658Q_1666Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">感染率</span>
+                                <span class="mini-value" id="ind16Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-16')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標19: 清淨手術傷口感染率 -->
+                <div class="overview-card quality-surg" onclick="showDetailModal('indicator-19')">
+                    <div class="card-badge">19</div>
+                    <div class="card-content">
+                        <h3>清淨手術傷口感染率</h3>
+                        <p class="card-code">2524Q/2526Y</p>
+                        <p class="card-cql-file">Indicator_19_Clean_Surgery_Wound_Infection_Rate_2524Q_2526Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">感染率</span>
+                                <span class="mini-value" id="ind19Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-19')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 結果品質指標 -->
+        <section class="overview-section" data-category="outcome">
+            <div class="section-header">
+                <div>
+                    <h2><i class="fas fa-chart-line"></i> 結果品質指標</h2>
+                    <p>醫療結果與死亡率監測</p>
+                </div>
+                <button class="btn btn-primary" onclick="executeAllOutcome()" style="margin-left: auto;">
+                    <i class="fas fa-play-circle"></i> 全部啟動
+                </button>
+            </div>
+            
+            <div class="overview-grid quality-grid">
+                <!-- 指標17: 急性心肌梗塞死亡率 -->
+                <div class="overview-card quality-outcome" onclick="showDetailModal('indicator-17')">
+                    <div class="card-badge">17</div>
+                    <div class="card-content">
+                        <h3>急性心肌梗塞死亡率</h3>
+                        <p class="card-code">1662Q/1668Y</p>
+                        <p class="card-cql-file">Indicator_17_Acute_Myocardial_Infarction_Mortality_Rate_1662Q_1668Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">死亡率</span>
+                                <span class="mini-value" id="ind17Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-17')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 指標18: 失智症安寧療護利用率 -->
+                <div class="overview-card quality-outcome" onclick="showDetailModal('indicator-18')">
+                    <div class="card-badge">18</div>
+                    <div class="card-content">
+                        <h3>失智症安寧療護利用率</h3>
+                        <p class="card-code">2795Q/2796Y</p>
+                        <p class="card-cql-file">Indicator_18_Dementia_Hospice_Care_Utilization_Rate_2795Q_2796Y.cql</p>
+                        <div class="card-mini-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">利用率</span>
+                                <span class="mini-value" id="ind18Rate">--%</span>
+                            </div>
+                        </div>
+                        <button class="btn-card-mini" onclick="event.stopPropagation(); executeQuery('indicator-18')">
+                            <i class="fas fa-play"></i> 查詢
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 詳情 Modal -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="modalTitle">詳細資訊</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 動態載入內容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- LLM 設定模態框 -->
+    <div id="llmSettingsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                <h3><i class="fas fa-brain"></i> LLM 連線控制台 - 醫療品質儀表板</h3>
+                <span class="modal-close" onclick="closeLLMSettingsModal()" style="color: white;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <!-- LLM 服務控制 -->
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: #1e293b;">
+                            <i class="fas fa-power-off"></i> 服務控制
+                        </h4>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <button id="uiConnectBtn" onclick="toggleUIConnection()" class="btn-external-service inactive">
+                                <i class="fas fa-window-restore"></i> <span>連線 UI/UX</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 四節點連接狀態圖 -->
+                    <div class="llm-connection-flow">
+                        <div class="connection-flow-header">
+                            <h5>連接狀態</h5>
+                        </div>
+                        
+                        <div class="connection-nodes-container">
+                            <!-- FHIR 伺服器 -->
+                            <div class="connection-node node-fhir">
+                                <div class="node-circle">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div class="node-label">
+                                    <div class="node-title">FHIR</div>
+                                    <div class="node-subtitle">伺服器</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 連接線 1: FHIR → 控制網頁 -->
+                            <div class="connection-line-wrapper">
+                                <div class="connection-line line-fhir-control connected"></div>
+                            </div>
+                            
+                            <!-- 控制網頁 -->
+                            <div class="connection-node node-control">
+                                <div class="node-circle">
+                                    <i class="fas fa-desktop"></i>
+                                </div>
+                                <div class="node-label">
+                                    <div class="node-title">控制網頁</div>
+                                    <div class="node-subtitle">醫護人員</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 連接線 2: 控制網頁 → 民眾網頁 -->
+                            <div class="connection-line-wrapper">
+                                <div class="connection-line line-control-public disconnected"></div>
+                            </div>
+                            
+                            <!-- 民眾網頁 -->
+                            <div class="connection-node node-public">
+                                <div class="node-circle">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="node-label">
+                                    <div class="node-title">民眾網頁</div>
+                                    <div class="node-subtitle">公開版</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 連接線 3: 民眾網頁 → LLM -->
+                            <div class="connection-line-wrapper">
+                                <div class="connection-line line-public-llm disconnected"></div>
+                            </div>
+                            
+                            <!-- LLM 智能模型 -->
+                            <div class="connection-node node-llm">
+                                <div class="node-circle">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="node-label">
+                                    <div class="node-title">LLM</div>
+                                    <div class="node-subtitle">智能模型</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="connection-flow-status">
+                            <i class="fas fa-info-circle"></i>
+                            <span id="llmConnectionMessage">預設狀態: FHIR ↔ 控制網頁 | 民眾網頁 ↔ LLM (計費中)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 使用狀態 -->
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 1rem 0; color: #1e293b;">
+                        <i class="fas fa-chart-line"></i> 即時使用狀態
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+                        <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                            <div style="font-size: 0.75rem; color: #1e40af; margin-bottom: 0.3rem;">查詢次數</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #1e40af;" id="queryCount">0</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
+                            <div style="font-size: 0.75rem; color: #065f46; margin-bottom: 0.3rem;">輸入 Token</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #065f46;" id="inputTokens">0</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                            <div style="font-size: 0.75rem; color: #92400e; margin-bottom: 0.3rem;">輸出 Token</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #92400e;" id="outputTokens">0</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fce7f3, #fbcfe8); padding: 1rem; border-radius: 8px; border-left: 4px solid #ec4899;">
+                            <div style="font-size: 0.75rem; color: #831843; margin-bottom: 0.3rem;">資料傳輸</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #831843;" id="dataTransfer">0 KB</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 獲利金額 -->
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 1rem 0; color: #1e293b;">
+                        <i class="fas fa-dollar-sign"></i> 獲利金額 (USD)
+                    </h4>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                                <th style="padding: 0.75rem; text-align: left; color: #64748b; font-weight: 600;">項目</th>
+                                <th style="padding: 0.75rem; text-align: right; color: #64748b; font-weight: 600;">數量</th>
+                                <th style="padding: 0.75rem; text-align: right; color: #64748b; font-weight: 600;">單價</th>
+                                <th style="padding: 0.75rem; text-align: right; color: #64748b; font-weight: 600;">費用</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 0.75rem; color: #1e293b;">輸入 Token</td>
+                                <td style="padding: 0.75rem; text-align: right; color: #64748b;" id="inputTokensTable">0</td>
+                                <td style="padding: 0.75rem; text-align: right; color: #64748b;">$3.00 / 1M</td>
+                                <td style="padding: 0.75rem; text-align: right; color: #10b981; font-weight: 600;" id="inputCost">$0.00</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 0.75rem; color: #1e293b;">輸出 Token</td>
+                                <td style="padding: 0.75rem; text-align: right; color: #64748b;" id="outputTokensTable">0</td>
+                                <td style="padding: 0.75rem; text-align: right; color: #64748b;">$15.00 / 1M</td>
+                                <td style="padding: 0.75rem; text-align: right; color: #10b981; font-weight: 600;" id="outputCost">$0.00</td>
+                            </tr>
+                            <tr style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); font-weight: 700;">
+                                <td colspan="3" style="padding: 1rem; color: #065f46;">總計獲利</td>
+                                <td style="padding: 1rem; text-align: right; color: #065f46; font-size: 1.2rem;" id="totalRevenue">$0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/fhir-connection.js"></script>
+    <script src="js/cql-engine.js"></script>
+    <script src="js/quality-indicators.js?v=20251214-1700"></script>
+    <script src="js/llm-service.js"></script>
+    <script src="js/llm-connection-manager.js"></script>
+</body>
+</html>
