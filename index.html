@@ -61,9 +61,10 @@
                     <div class="form-group">
                         <label for="fhirServer">選擇 FHIR 伺服器</label>
                         <select id="fhirServer" class="form-control">
-                            <option value="https://emr-smart.appx.com.tw/v/r4/fhir">EMR-Smart (台灣50專用伺服器) ⭐ 推薦</option>
-                            <option value="https://hapi.fhir.org/baseR4">HAPI FHIR R4 (大量資料伺服器)</option>
-                            <option value="https://r4.smarthealthit.org">SMART Health IT R4 (資料少)</option>
+                            <option value="https://thas.mohw.gov.tw/v/r4/fhir">台灣衛福部 FHIR Server (官方測試環境) ⭐ 推薦</option>
+                            <option value="https://hapi.fhir.org/baseR4">HAPI FHIR R4 (國際測試伺服器)</option>
+                            <option value="https://r4.smarthealthit.org">SMART Health IT R4</option>
+                            <option value="https://server.fire.ly/r4">Firely Server (國際測試環境)</option>
                             <option value="custom">自訂伺服器...</option>
                         </select>
                     </div>
@@ -234,6 +235,7 @@
         </div>
     </footer>
 
+    <script src="js/smart-launch.js"></script>
     <script src="js/main.js"></script>
     <script src="js/fhir-connection.js"></script>
 </body>
